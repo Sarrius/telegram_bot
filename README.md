@@ -39,7 +39,7 @@ cd telegram_bot
 
 # Install dependencies
 npm install
-
+co
 # Create environment file
 echo "BOT_TOKEN=YOUR_BOT_TOKEN_HERE" > .env
 
