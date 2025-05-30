@@ -10,13 +10,13 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "node-telegram-bot-api": "^0.64.0",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "node-telegram-bot-api": "^0.66.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
-    "@types/node-telegram-bot-api": "^0.64.0",
+    "@types/node-telegram-bot-api": "^0.64.8",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   }
-} 
+}

@@ -1,4 +1,4 @@
-import TelegramBot from 'node-telegram-bot-api';
+import TelegramBot, { User } from 'node-telegram-bot-api';
 import dotenv from 'dotenv';
 import { getReaction, getReply } from './usecases/handleMessage';
 
@@ -14,10 +14,9 @@ if (!token) {
 const bot = new TelegramBot(token, { polling: true });
 
 // Get bot username for mention detection
-type BotInfo = { username: string };
 let botUsername = '';
-bot.getMe().then((me: BotInfo) => {
-  botUsername = me.username;
+bot.getMe().then((me: User) => {
+  botUsername = me.username || '';
 });
 
 // Listen for all messages in group chats
