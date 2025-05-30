@@ -26,7 +26,8 @@ const server = http.createServer((req, res) => {
       status: 'OK', 
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      bot_active: !!botInstance
+      bot_active: !!botInstance,
+      bot_username: botUsername || 'not_retrieved'
     }));
   } else {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -42,8 +43,11 @@ server.listen(port, () => {
   console.log(`✅ HTTP server listening on port ${port}`);
   console.log('✅ Health check endpoint available at /health');
   
-  // Initialize bot AFTER server is running
-  initializeBot();
+  // Wait a bit before starting bot to avoid conflicts with previous instances
+  console.log('⏳ Waiting 3 seconds before initializing bot to avoid polling conflicts...');
+  setTimeout(() => {
+    initializeBot();
+  }, 3000);
 });
 
 server.on('error', (err) => {
@@ -62,7 +66,12 @@ function initializeBot() {
     }
 
     // Create bot instance with simple polling (like the original)
-    botInstance = new TelegramBot(token, { polling: true });
+    botInstance = new TelegramBot(token, { 
+      polling: {
+        interval: 1000,  // Slightly slower polling
+        autoStart: false // Don't auto-start, we'll start manually
+      }
+    });
 
     // Set up error handlers
     botInstance.on('error', (error) => {
@@ -72,27 +81,71 @@ function initializeBot() {
 
     botInstance.on('polling_error', (error) => {
       console.error('❌ Polling error:', error.message);
-      // Don't exit on polling errors, just log them
+      
+      // If it's a conflict error, try to restart after a delay
+      if (error.message.includes('409') || error.message.includes('Conflict')) {
+        console.log('🔄 Polling conflict detected. Attempting to restart polling in 10 seconds...');
+        setTimeout(() => {
+          restartPolling();
+        }, 10000);
+      }
     });
 
-    // Get bot info
+    // Get bot info first
+    console.log('📡 Getting bot information...');
     botInstance.getMe().then((me: User) => {
       botUsername = me.username || '';
       console.log(`✅ Bot info retrieved: @${botUsername} (${me.first_name})`);
-      console.log('🚀 Telegram bot is now running!');
+      
+      // Set up message handler
+      botInstance!.on('message', handleMessage);
+      
+      // Start polling after getting bot info
+      console.log('🚀 Starting bot polling...');
+      return botInstance!.startPolling();
+    }).then(() => {
+      console.log('✅ Bot polling started successfully');
+      console.log('🎉 Telegram bot is now running!');
     }).catch((error) => {
-      console.error('⚠️ Could not get bot info:', error.message);
+      console.error('❌ Error during bot initialization:', error.message);
+      if (error.message.includes('409') || error.message.includes('Conflict')) {
+        console.log('🔄 Will retry initialization in 15 seconds...');
+        setTimeout(() => {
+          initializeBot();
+        }, 15000);
+      }
     });
-
-    // Set up message handler
-    botInstance.on('message', handleMessage);
-
-    console.log('✅ Bot polling started successfully');
 
   } catch (error) {
     console.error('❌ Failed to initialize bot:', error);
     // Don't exit - keep the health check server running
-    // Railway can still perform health checks even if bot fails
+  }
+}
+
+function restartPolling() {
+  if (!botInstance) return;
+  
+  try {
+    console.log('🛑 Stopping current polling...');
+    botInstance.stopPolling();
+    
+    setTimeout(() => {
+      console.log('🚀 Restarting polling...');
+      botInstance!.startPolling().then(() => {
+        console.log('✅ Polling restarted successfully');
+      }).catch((error) => {
+        console.error('❌ Failed to restart polling:', error.message);
+        // Try again after another delay
+        if (error.message.includes('409') || error.message.includes('Conflict')) {
+          console.log('🔄 Will retry in 20 seconds...');
+          setTimeout(() => {
+            restartPolling();
+          }, 20000);
+        }
+      });
+    }, 2000);
+  } catch (error) {
+    console.error('❌ Error during polling restart:', error);
   }
 }
 
