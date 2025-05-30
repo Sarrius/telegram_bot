@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "dotenv": "^16.4.5",
+    "fuse.js": "^7.1.0",
     "node-telegram-bot-api": "^0.66.0",
     "vader-sentiment": "^1.1.3"
   },

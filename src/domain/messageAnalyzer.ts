@@ -14,6 +14,19 @@ export interface SentimentAnalysis {
   isNegative: boolean;
   isMotivational: boolean;
   isAggressive: boolean;
+  detectedLanguage: 'ukrainian' | 'english' | 'mixed';
+}
+
+function detectLanguage(text: string): 'ukrainian' | 'english' | 'mixed' {
+  const ukrainianChars = text.match(/[а-яіїєґ]/gi);
+  const englishChars = text.match(/[a-z]/gi);
+  
+  const ukrainianCount = ukrainianChars ? ukrainianChars.length : 0;
+  const englishCount = englishChars ? englishChars.length : 0;
+  
+  if (ukrainianCount > englishCount * 2) return 'ukrainian';
+  if (englishCount > ukrainianCount * 2) return 'english';
+  return 'mixed';
 }
 
 export function analyzeMessage(text: string): string {
@@ -23,8 +36,9 @@ export function analyzeMessage(text: string): string {
 
 export function analyzeMessageDetailed(text: string): SentimentAnalysis {
   const lowerText = text.toLowerCase();
+  const detectedLanguage = detectLanguage(text);
   
-  // Get sentiment scores from VADER
+  // Get sentiment scores from VADER (works better for English, but provides baseline for Ukrainian)
   const sentiment = vaderSentiment.SentimentIntensityAnalyzer.polarity_scores(text);
   
   // Determine basic sentiment
@@ -44,36 +58,82 @@ export function analyzeMessageDetailed(text: string): SentimentAnalysis {
     intensity = 'medium';
   }
   
-  // Check for motivational keywords
+  // Motivational keywords (English + Ukrainian)
   const motivationalKeywords = [
+    // English
     'motivat', 'inspir', 'achiev', 'success', 'dream', 'goal', 'winner', 'champion',
     'believe', 'never give up', 'you can do it', 'keep going', 'push yourself',
     'mindset', 'grind', 'hustle', 'crush it', 'beast mode', 'no excuses',
-    'limit', 'potential', 'manifest', 'blessed', 'grateful', 'thankful'
+    'limit', 'potential', 'manifest', 'blessed', 'grateful', 'thankful',
+    // Ukrainian
+    'мотивац', 'натхнен', 'досягнен', 'успіх', 'мрія', 'ціль', 'переможець', 'чемпіон',
+    'вірити', 'не здавайся', 'ти зможеш', 'продовжуй', 'тисни', 'не зупиняйся',
+    'мислення', 'робота', 'пашіння', 'розбити', 'режим звіра', 'без виправдань',
+    'межа', 'потенціал', 'маніфест', 'благословенний', 'вдячний', 'дякую',
+    'сила волі', 'наполегливість', 'старання', 'зусилля', 'боротьба', 'виклик'
+  ];
+  
+  // Aggressive keywords (English + Ukrainian)
+  const aggressiveKeywords = [
+    // English
+    'hate', 'stupid', 'idiot', 'moron', 'dumb', 'shut up', 'stfu',
+    'kill', 'die', 'death', 'murder', 'destroy', 'annihilate',
+    'pathetic', 'loser', 'worthless', 'useless', 'garbage', 'trash',
+    // Ukrainian
+    'ненавижу', 'дурний', 'ідіот', 'дебіл', 'тупий', 'заткнися', 'мовчи',
+    'вбити', 'померти', 'смерть', 'вбивство', 'знищити', 'винищити',
+    'жалюгідний', 'невдаха', 'нікчемний', 'марний', 'сміття', 'відходи',
+    'урод', 'покидьок', 'придурок', 'кретин', 'дурак', 'бидло', 'мразь',
+    'піди на', 'йди в', 'відчепись', 'відстань', 'задовбав'
+  ];
+  
+  // Ukrainian positive expressions (for detecting overly positive)
+  const ukrainianPositiveExpressions = [
+    'супер', 'чудово', 'прекрасно', 'фантастично', 'неймовірно', 'вау',
+    'класно', 'круто', 'бомбезно', 'топчик', 'огонь', 'бестіально'
+  ];
+  
+  // Ukrainian negative expressions
+  const ukrainianNegativeExpressions = [
+    'погано', 'жахливо', 'страшно', 'кошмар', 'жах', 'катастрофа',
+    'сумно', 'депресивно', 'ужас', 'біда', 'горе', 'нещастя'
   ];
   
   const isMotivational = motivationalKeywords.some(keyword => 
     lowerText.includes(keyword)
   );
   
-  // Check for aggressive keywords
-  const aggressiveKeywords = [
-    'hate', 'stupid', 'idiot', 'moron', 'dumb', 'shut up', 'stfu',
-    'kill', 'die', 'death', 'murder', 'destroy', 'annihilate',
-    'pathetic', 'loser', 'worthless', 'useless', 'garbage', 'trash'
-  ];
-  
   const isAggressive = aggressiveKeywords.some(keyword => 
     lowerText.includes(keyword)
   );
   
+  // Enhanced positive/negative detection for Ukrainian
+  const hasUkrainianPositive = ukrainianPositiveExpressions.some(expr => 
+    lowerText.includes(expr)
+  );
+  
+  const hasUkrainianNegative = ukrainianNegativeExpressions.some(expr => 
+    lowerText.includes(expr)
+  );
+  
+  // Adjust sentiment based on Ukrainian expressions
+  if (detectedLanguage === 'ukrainian' || detectedLanguage === 'mixed') {
+    if (hasUkrainianPositive && !hasUkrainianNegative) {
+      sentimentType = 'positive';
+      if (intensity === 'low') intensity = 'medium';
+    } else if (hasUkrainianNegative && !hasUkrainianPositive) {
+      sentimentType = 'negative';
+      if (intensity === 'low') intensity = 'medium';
+    }
+  }
+  
   // Detect overly positive (high positive sentiment + motivational keywords)
-  const isOverlyPositive = sentimentType === 'positive' && 
-                          intensity === 'high' && 
-                          (isMotivational || sentiment.compound > 0.7);
+  const isOverlyPositive = (sentimentType === 'positive' && intensity === 'high') || 
+                          (sentimentType === 'positive' && isMotivational) ||
+                          (hasUkrainianPositive && isMotivational);
   
   // Detect negative sentiment or aggressive content
-  const isNegative = sentimentType === 'negative' || isAggressive;
+  const isNegative = sentimentType === 'negative' || isAggressive || hasUkrainianNegative;
   
   // Determine category based on analysis
   let category = 'default';
@@ -90,16 +150,60 @@ export function analyzeMessageDetailed(text: string): SentimentAnalysis {
     category = 'motivational';
   }
   
-  // Check for existing keyword categories (maintain compatibility)
+  // Bilingual keyword categories (maintain compatibility)
   const keywordCategories = {
-    greeting: ['hello', 'hi', 'hey', 'good morning', 'good evening'],
-    food: ['pizza', 'coffee', 'food', 'eat', 'hungry', 'delicious'],
-    love: ['love', 'heart', 'romantic', 'valentine'],
-    sad: ['sad', 'cry', 'depressed', 'upset'],
-    angry: ['angry', 'mad', 'furious', 'rage'],
-    funny: ['haha', 'lol', 'funny', 'joke', 'hilarious'],
-    work: ['work', 'job', 'office', 'meeting', 'deadline'],
-    weather: ['weather', 'rain', 'sun', 'snow', 'hot', 'cold']
+    greeting: [
+      // English
+      'hello', 'hi', 'hey', 'good morning', 'good evening',
+      // Ukrainian
+      'привіт', 'вітаю', 'добрий день', 'доброго ранку', 'добрий вечір',
+      'здоров', 'здрастуйте', 'як справи', 'як діла'
+    ],
+    food: [
+      // English
+      'pizza', 'coffee', 'food', 'eat', 'hungry', 'delicious',
+      // Ukrainian
+      'піца', 'кава', 'їжа', 'їсти', 'голодний', 'смачно',
+      'борщ', 'вареники', 'сало', 'хліб', 'м\'ясо', 'овочі'
+    ],
+    love: [
+      // English
+      'love', 'heart', 'romantic', 'valentine',
+      // Ukrainian
+      'кохання', 'любов', 'серце', 'романтика', 'валентинка',
+      'коханий', 'кохана', 'милий', 'мила'
+    ],
+    sad: [
+      // English
+      'sad', 'cry', 'depressed', 'upset',
+      // Ukrainian
+      'сумний', 'плакати', 'депресія', 'засмучений',
+      'смуток', 'сльози', 'горе', 'печаль'
+    ],
+    angry: [
+      // English
+      'angry', 'mad', 'furious', 'rage',
+      // Ukrainian
+      'злий', 'божевільний', 'лютий', 'гнів', 'бісить', 'дратує'
+    ],
+    funny: [
+      // English
+      'haha', 'lol', 'funny', 'joke', 'hilarious',
+      // Ukrainian
+      'хаха', 'лол', 'смішно', 'жарт', 'кумедно', 'ржу', 'угарний'
+    ],
+    work: [
+      // English
+      'work', 'job', 'office', 'meeting', 'deadline',
+      // Ukrainian
+      'робота', 'офіс', 'зустріч', 'дедлайн', 'завдання', 'проект'
+    ],
+    weather: [
+      // English
+      'weather', 'rain', 'sun', 'snow', 'hot', 'cold',
+      // Ukrainian
+      'погода', 'дощ', 'сонце', 'сніг', 'спека', 'холод', 'тепло'
+    ]
   };
   
   // Check keyword categories if no sentiment category found
@@ -125,6 +229,7 @@ export function analyzeMessageDetailed(text: string): SentimentAnalysis {
     isOverlyPositive,
     isNegative,
     isMotivational,
-    isAggressive
+    isAggressive,
+    detectedLanguage
   };
 } 
