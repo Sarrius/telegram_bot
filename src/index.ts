@@ -51,26 +51,20 @@ server.on('error', (err) => {
   process.exit(1);
 });
 
-async function initializeBot() {
+function initializeBot() {
   try {
     console.log('🤖 Initializing Telegram bot...');
     
     if (!token) {
-      throw new Error('BOT_TOKEN environment variable is not set');
+      console.error('❌ BOT_TOKEN environment variable is not set');
+      console.log('⚠️ Bot will not start, but health check server remains active');
+      return;
     }
 
-    // Create bot instance with error handling
-    botInstance = new TelegramBot(token, { 
-      polling: {
-        interval: 300,
-        autoStart: false,
-        params: {
-          timeout: 10
-        }
-      }
-    });
+    // Create bot instance with simple polling (like the original)
+    botInstance = new TelegramBot(token, { polling: true });
 
-    // Set up error handlers BEFORE starting polling
+    // Set up error handlers
     botInstance.on('error', (error) => {
       console.error('❌ Bot error:', error.message);
       // Don't exit on bot errors, just log them
@@ -82,22 +76,18 @@ async function initializeBot() {
     });
 
     // Get bot info
-    try {
-      const me: User = await botInstance.getMe();
+    botInstance.getMe().then((me: User) => {
       botUsername = me.username || '';
       console.log(`✅ Bot info retrieved: @${botUsername} (${me.first_name})`);
-    } catch (error) {
-      console.error('⚠️ Could not get bot info:', error);
-      // Continue anyway
-    }
+      console.log('🚀 Telegram bot is now running!');
+    }).catch((error) => {
+      console.error('⚠️ Could not get bot info:', error.message);
+    });
 
     // Set up message handler
     botInstance.on('message', handleMessage);
 
-    // Start polling
-    await botInstance.startPolling();
     console.log('✅ Bot polling started successfully');
-    console.log('🚀 Telegram bot is now running!');
 
   } catch (error) {
     console.error('❌ Failed to initialize bot:', error);
@@ -142,23 +132,19 @@ function handleMessage(msg: any) {
 process.on('SIGTERM', () => {
   console.log('📡 SIGTERM received - shutting down gracefully...');
   
-  const cleanup = async () => {
+  if (botInstance) {
+    console.log('🛑 Stopping bot polling...');
     try {
-      if (botInstance) {
-        console.log('🛑 Stopping bot polling...');
-        await botInstance.stopPolling();
-      }
+      botInstance.stopPolling();
     } catch (error) {
       console.error('⚠️ Error stopping bot:', error);
     }
-    
-    server.close(() => {
-      console.log('🛑 HTTP server closed');
-      process.exit(0);
-    });
-  };
+  }
   
-  cleanup();
+  server.close(() => {
+    console.log('🛑 HTTP server closed');
+    process.exit(0);
+  });
   
   // Force exit after 10 seconds
   setTimeout(() => {
