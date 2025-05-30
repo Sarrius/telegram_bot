@@ -14,38 +14,61 @@ A lightweight Telegram bot that reacts to group messages with emojis and replies
 - Talk to [@BotFather](https://t.me/BotFather) on Telegram
 - Create a new bot and copy the token
 
-### 2. Deploy (Choose One)
+### 2. Local Setup & Run
 
-#### Railway
-- [Create a Railway account](https://railway.app/)
-- Click "New Project" → "Deploy from GitHub" or upload your code
-- Add `BOT_TOKEN` as a variable in the Railway dashboard
-- Set Start Command: `npm run build && npm start`
+#### a) Clone the repository
+```
+git clone https://github.com/Sarrius/telegram_bot.git
+cd telegram_bot
+```
 
-#### Replit
-- [Create a Replit account](https://replit.com/)
-- Import this repo or create a new Node.js repl
-- Add `.env` file with `BOT_TOKEN=...`
-- Run `npm install`, then `npm run dev` or use the "Run" button
+#### b) Create a `.env` file in the project root
+```
+BOT_TOKEN=your_botfather_token_here
+```
 
-#### Deta (Node.js Micro)
-- [Create a Deta account](https://deta.space/)
-- Use the Node.js runtime, upload your code
-- Set `BOT_TOKEN` in environment variables
-- Set Start Command: `npm run build && npm start`
+#### c) Install dependencies
+```
+npm install
+```
 
-#### Fly.io
-- [Install Fly CLI](https://fly.io/docs/hands-on/install-flyctl/)
-- Run `fly launch` and follow prompts
-- Set `BOT_TOKEN` with `fly secrets set BOT_TOKEN=...`
-- Deploy with `fly deploy`
+#### d) Build the project
+```
+npm run build
+```
 
-### 3. Invite Bot to Group
-- Add your bot to a Telegram group
-- Grant permission to read messages
+#### e) Start the bot
+```
+npm start
+```
 
-### 4. Config
-- Edit `src/config/emoji.config.ts` to change emojis and replies
+Or for development (auto-reload):
+```
+npm run dev
+```
+
+### 3. Push Your Changes
+```
+git add .
+git commit -m "your message"
+git push
+```
+
+### 4. Customize Emoji & Replies
+- Edit `src/config/emoji.config.ts` to add your own words and emoji/replies.
+- Example:
+  ```ts
+  export const emojiReactions: Record<string, string[]> = {
+    hello: ['👋', '😊'],
+    pizza: ['🍕', '😋'],
+    // ...
+    default: ['👍']
+  };
+  ```
+- Changes take effect after restarting the bot.
+
+### 5. Deploy (Optional)
+See instructions for Railway, Replit, Deta, or Fly.io below.
 
 ---
 
