@@ -27,7 +27,8 @@ const server = http.createServer((req, res) => {
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       bot_active: !!botInstance,
-      bot_username: botUsername || 'not_retrieved'
+      bot_username: botUsername || 'not_retrieved',
+      retry_count: retryCount
     }));
   } else {
     res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -38,16 +39,19 @@ const server = http.createServer((req, res) => {
 // Start server immediately
 let botInstance: TelegramBot | null = null;
 let botUsername = '';
+let retryCount = 0;
+let maxRetries = 3;
+let isRetrying = false;
 
 server.listen(port, () => {
   console.log(`✅ HTTP server listening on port ${port}`);
   console.log('✅ Health check endpoint available at /health');
   
-  // Wait a bit before starting bot to avoid conflicts with previous instances
-  console.log('⏳ Waiting 3 seconds before initializing bot to avoid polling conflicts...');
+  // Wait longer before starting bot to ensure any previous instances are fully shut down
+  console.log('⏳ Waiting 10 seconds before initializing bot to avoid polling conflicts...');
   setTimeout(() => {
     initializeBot();
-  }, 3000);
+  }, 10000);
 });
 
 server.on('error', (err) => {
@@ -65,10 +69,10 @@ function initializeBot() {
       return;
     }
 
-    // Create bot instance with simple polling (like the original)
+    // Create bot instance with simple polling
     botInstance = new TelegramBot(token, { 
       polling: {
-        interval: 1000,  // Slightly slower polling
+        interval: 2000,  // Slower polling to be gentler
         autoStart: false // Don't auto-start, we'll start manually
       }
     });
@@ -82,12 +86,23 @@ function initializeBot() {
     botInstance.on('polling_error', (error) => {
       console.error('❌ Polling error:', error.message);
       
-      // If it's a conflict error, try to restart after a delay
-      if (error.message.includes('409') || error.message.includes('Conflict')) {
-        console.log('🔄 Polling conflict detected. Attempting to restart polling in 10 seconds...');
-        setTimeout(() => {
-          restartPolling();
-        }, 10000);
+      // If it's a conflict error and we haven't reached max retries
+      if ((error.message.includes('409') || error.message.includes('Conflict')) && !isRetrying) {
+        console.log(`🔄 Polling conflict detected (attempt ${retryCount + 1}/${maxRetries})`);
+        
+        if (retryCount < maxRetries) {
+          isRetrying = true;
+          retryCount++;
+          const backoffDelay = Math.min(30000 * retryCount, 120000); // 30s, 60s, 90s, max 120s
+          console.log(`⏳ Will retry in ${backoffDelay/1000} seconds...`);
+          
+          setTimeout(() => {
+            restartPollingWithBackoff();
+          }, backoffDelay);
+        } else {
+          console.error(`❌ Max retries (${maxRetries}) reached. Giving up on bot polling.`);
+          console.log('⚠️ Health check server will continue running.');
+        }
       }
     });
 
@@ -106,13 +121,18 @@ function initializeBot() {
     }).then(() => {
       console.log('✅ Bot polling started successfully');
       console.log('🎉 Telegram bot is now running!');
+      retryCount = 0; // Reset retry count on success
+      isRetrying = false;
     }).catch((error) => {
       console.error('❌ Error during bot initialization:', error.message);
-      if (error.message.includes('409') || error.message.includes('Conflict')) {
-        console.log('🔄 Will retry initialization in 15 seconds...');
+      if ((error.message.includes('409') || error.message.includes('Conflict')) && retryCount < maxRetries) {
+        console.log('🔄 Will retry initialization in 30 seconds...');
+        retryCount++;
         setTimeout(() => {
           initializeBot();
-        }, 15000);
+        }, 30000);
+      } else {
+        console.error('❌ Bot initialization failed permanently');
       }
     });
 
@@ -122,30 +142,31 @@ function initializeBot() {
   }
 }
 
-function restartPolling() {
-  if (!botInstance) return;
+function restartPollingWithBackoff() {
+  if (!botInstance) {
+    isRetrying = false;
+    return;
+  }
   
   try {
     console.log('🛑 Stopping current polling...');
     botInstance.stopPolling();
     
+    // Wait longer before restarting
     setTimeout(() => {
-      console.log('🚀 Restarting polling...');
+      console.log('🚀 Attempting to restart polling...');
       botInstance!.startPolling().then(() => {
         console.log('✅ Polling restarted successfully');
+        retryCount = 0; // Reset on success
+        isRetrying = false;
       }).catch((error) => {
         console.error('❌ Failed to restart polling:', error.message);
-        // Try again after another delay
-        if (error.message.includes('409') || error.message.includes('Conflict')) {
-          console.log('🔄 Will retry in 20 seconds...');
-          setTimeout(() => {
-            restartPolling();
-          }, 20000);
-        }
+        isRetrying = false; // Allow the polling_error handler to try again
       });
-    }, 2000);
+    }, 5000); // 5 second wait between stop and start
   } catch (error) {
     console.error('❌ Error during polling restart:', error);
+    isRetrying = false;
   }
 }
 
@@ -199,11 +220,11 @@ process.on('SIGTERM', () => {
     process.exit(0);
   });
   
-  // Force exit after 10 seconds
+  // Force exit after 15 seconds (longer to allow proper cleanup)
   setTimeout(() => {
     console.error('⏰ Force shutdown after timeout');
     process.exit(1);
-  }, 10000);
+  }, 15000);
 });
 
 process.on('SIGINT', () => {
