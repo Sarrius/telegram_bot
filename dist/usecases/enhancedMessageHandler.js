@@ -6,6 +6,8 @@ const nlpConversation_1 = require("../domain/nlpConversation");
 const inappropriateContentDetector_1 = require("../domain/inappropriateContentDetector");
 const atmosphereEnhancer_1 = require("../domain/atmosphereEnhancer");
 const memeGenerator_1 = require("../domain/memeGenerator");
+const botCapabilities_1 = require("../domain/botCapabilities");
+const potuzhnoPowerWordsDetector_1 = require("../domain/potuzhnoPowerWordsDetector");
 const messageAnalyzer_1 = require("../domain/messageAnalyzer");
 class EnhancedMessageHandler {
     constructor(contentConfig, atmosphereConfig) {
@@ -22,6 +24,8 @@ class EnhancedMessageHandler {
             ...atmosphereConfig
         });
         this.memeGenerator = new memeGenerator_1.MemeGenerator();
+        this.botCapabilities = new botCapabilities_1.BotCapabilities();
+        this.powerWordsDetector = new potuzhnoPowerWordsDetector_1.PotuzhnoPowerWordsDetector();
         console.log('🇺🇦 Enhanced Ukrainian Telegram Bot Handler initialized');
         // Start periodic atmosphere engagement checks
         this.startAtmosphereMonitoring();
@@ -57,23 +61,63 @@ class EnhancedMessageHandler {
             };
             // Generate response to update user statistics (we may not use the response)
             await this.nlpEngine.generateConversationalResponse(nlpContext);
-            // Step 3: Check for direct conversation requests
+            // Step 3: Check for bot capabilities requests (high priority)
+            if (this.isBotCapabilitiesRequest(context)) {
+                const capabilitiesResponse = await this.handleCapabilitiesRequest(context);
+                if (capabilitiesResponse) {
+                    return capabilitiesResponse;
+                }
+            }
+            // Step 4: Check for power words ("потужно" синоніми) with typo tolerance
+            const powerWordMatch = this.powerWordsDetector.getBestPowerWordMatch(context.text);
+            if (powerWordMatch) {
+                console.log(`⚡ Power word detected: "${powerWordMatch.originalWord}" -> "${powerWordMatch.matchedWord}" (${(powerWordMatch.confidence * 100).toFixed(1)}%)`);
+                const emoji = this.powerWordsDetector.getReactionEmoji(powerWordMatch);
+                const motivationalResponse = this.powerWordsDetector.getMotivationalResponse(powerWordMatch);
+                return {
+                    ...this.createBaseResponse(),
+                    shouldReact: true,
+                    reaction: emoji,
+                    shouldReply: Math.random() < 0.3, // 30% шанс додатково відповісти
+                    reply: Math.random() < 0.3 ? motivationalResponse : undefined,
+                    confidence: powerWordMatch.confidence,
+                    reasoning: `Power word detected: ${powerWordMatch.originalWord} -> ${powerWordMatch.matchedWord}`,
+                    powerWordReaction: {
+                        emoji,
+                        match: powerWordMatch,
+                        motivationalResponse
+                    },
+                    responseType: 'power_word'
+                };
+            }
+            // Step 5: Check for direct conversation requests (mentions, replies, help requests)
             if (this.isDirectConversationRequest(context)) {
                 const conversationResponse = await this.handleConversation(context);
                 if (conversationResponse) {
                     return conversationResponse;
                 }
             }
-            // Step 4: Check for meme requests
+            // Step 6: Check for meme requests
             if (this.isMemeRequest(context)) {
                 const memeResponse = await this.handleMemeRequest(context);
                 if (memeResponse) {
                     return memeResponse;
                 }
             }
-            // Step 5: Use base handler for normal sentiment reactions
+            // Step 7: Enhanced emotional trigger detection
+            const shouldEngageEmotionally = this.shouldEngageBasedOnEmotions(context);
+            if (!shouldEngageEmotionally.shouldEngage) {
+                console.log(`🤐 Staying quiet: ${shouldEngageEmotionally.reasoning}`);
+                return {
+                    ...this.createBaseResponse(),
+                    confidence: shouldEngageEmotionally.confidence,
+                    reasoning: shouldEngageEmotionally.reasoning,
+                    responseType: 'none'
+                };
+            }
+            // Step 8: Use base handler for sentiment reactions only if we decided to engage
             const baseResponse = await this.baseHandler.handleMessage(context);
-            // Step 6: Enhance with meme suggestions if appropriate
+            // Step 9: Enhance with meme suggestions if appropriate
             if (baseResponse.shouldReact && Math.random() < 0.1) { // 10% chance to suggest meme
                 const memeData = await this.tryGenerateContextualMeme(context.text);
                 if (memeData) {
@@ -84,7 +128,7 @@ class EnhancedMessageHandler {
                     };
                 }
             }
-            // Step 7: Return enhanced base response
+            // Step 10: Return enhanced base response
             const processingTime = Date.now() - startTime;
             console.log(`✅ Enhanced processing completed in ${processingTime}ms`);
             return {
@@ -284,6 +328,10 @@ class EnhancedMessageHandler {
             },
             memes: {
                 availableTemplates: this.memeGenerator.getAvailableTemplates().length
+            },
+            powerWords: {
+                vocabularySize: this.powerWordsDetector.getDetectionStats('').totalMatches || 0,
+                confidenceThreshold: 0.8
             }
         };
     }
@@ -310,6 +358,154 @@ class EnhancedMessageHandler {
     }
     addCustomForbiddenWords(words) {
         this.contentDetector.addCustomForbiddenWords(words);
+    }
+    // Bot capabilities methods
+    isBotCapabilitiesRequest(context) {
+        return this.botCapabilities.detectCapabilityRequest(context.text);
+    }
+    async handleCapabilitiesRequest(context) {
+        try {
+            // Detect language
+            const language = this.detectLanguage(context.text);
+            const response = this.botCapabilities.generateCapabilitiesResponse(language === 'uk' || language === 'mixed' ? 'uk' : 'en', context.userName);
+            console.log(`📋 Capabilities request from ${context.userName} (${language})`);
+            return {
+                ...this.createBaseResponse(),
+                shouldReply: true,
+                reply: response,
+                confidence: 0.95,
+                reasoning: 'Bot capabilities request detected',
+                conversationResponse: response,
+                responseType: 'conversation'
+            };
+        }
+        catch (error) {
+            console.error('❌ Error in capabilities handling:', error);
+            return null;
+        }
+    }
+    detectLanguage(text) {
+        const lowerText = text.toLowerCase();
+        // Check for Ukrainian specific characters and words
+        const ukrainianChars = /[іїєґ]/g;
+        const ukrainianWords = ['що', 'як', 'коли', 'де', 'чому', 'і', 'в', 'на', 'з', 'можеш', 'можливості', 'функції'];
+        const hasUkrainianChars = ukrainianChars.test(lowerText);
+        const ukrainianWordCount = ukrainianWords.filter(word => lowerText.includes(word)).length;
+        if (hasUkrainianChars || ukrainianWordCount >= 1) {
+            return 'uk';
+        }
+        // Check for mixed language
+        const englishWords = ['what', 'can', 'you', 'do', 'capabilities', 'features', 'help'];
+        const englishWordCount = englishWords.filter(word => lowerText.includes(word)).length;
+        if (ukrainianWordCount > 0 && englishWordCount > 0) {
+            return 'mixed';
+        }
+        return englishWordCount > 0 ? 'en' : 'uk';
+    }
+    // NEW: Enhanced emotional engagement detection
+    shouldEngageBasedOnEmotions(context) {
+        const text = context.text.toLowerCase();
+        // Always engage on direct emotional appeals
+        const emotionalTriggers = {
+            // Помощь и поддержка
+            helpSeeking: [
+                'допоможи', 'допомога', 'потрібна допомога', 'потрібна підтримка', 'help me',
+                'підтримай', 'підтримайте', 'важко', 'складно', 'не знаю що робити',
+                'поради', 'порада', 'що робити', 'як бути', 'розгубився', 'розгубилася'
+            ],
+            // Сильні емоції (позитивні)
+            strongPositive: [
+                'супер', 'чудово', 'фантастично', 'неймовірно', 'вау', 'wow',
+                'офігенно', 'бомбезно', 'класно', 'круто', 'топ', 'бест',
+                'ура', 'ідеально', 'прекрасно', 'геніально', 'love', 'обожнюю'
+            ],
+            // Сильні емоції (негативні)
+            strongNegative: [
+                'жахливо', 'ужасно', 'кошмар', 'депресія', 'сумно', 'грустно',
+                'погано', 'катастрофа', 'біда', 'трагедія', 'провал', 'невдача',
+                'паскудно', 'відстій', 'hate', 'ненавиджу', 'злюся', 'розчарований'
+            ],
+            // Підтримка в чаті
+            chatSupport: [
+                'хтось є', 'є хто', 'хто онлайн', 'чого так тихо', 'мертвий чат',
+                'де всі', 'чат спить', 'оживіть чат', 'хочеться поговорити',
+                'нудно', 'скучно', 'давайте поговоримо', 'розважте мене'
+            ],
+            // Привітання та прощання
+            greetings: [
+                'всім привіт', 'привіт усім', 'доброго ранку всім', 'доброї ночі всім',
+                'добрий день усім', 'hello everyone', 'hi all', 'good morning all',
+                'всім спокійної ночі', 'до побачення всім', 'піду спати'
+            ]
+        };
+        // Check emotional triggers
+        for (const [category, triggers] of Object.entries(emotionalTriggers)) {
+            for (const trigger of triggers) {
+                if (text.includes(trigger)) {
+                    return {
+                        shouldEngage: true,
+                        confidence: 0.85,
+                        reasoning: `Emotional trigger detected (${category}): "${trigger}"`
+                    };
+                }
+            }
+        }
+        // Patterns that indicate user wants interaction
+        const interactionPatterns = [
+            /^хто .+ \?/, // "хто тут?", "хто онлайн?"
+            /що .+ думаєте/, // "що ви думаєте"
+            /ваша думка/, // "ваша думка"
+            /як вам/, // "як вам це"
+            /\?.{0,5}$/, // Questions ending with ?
+            /!{2,}/, // Multiple exclamation marks
+        ];
+        for (const pattern of interactionPatterns) {
+            if (pattern.test(text)) {
+                return {
+                    shouldEngage: true,
+                    confidence: 0.7,
+                    reasoning: `Interaction pattern detected: ${pattern}`
+                };
+            }
+        }
+        // Check for excessive caps or emoji (high emotion)
+        const capsRatio = (text.match(/[А-ЯA-Z]/g) || []).length / text.length;
+        const emojiCount = (text.match(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}]/gu) || []).length;
+        if (capsRatio > 0.5 && text.length > 5) {
+            return {
+                shouldEngage: true,
+                confidence: 0.75,
+                reasoning: `High caps ratio (${(capsRatio * 100).toFixed(1)}%) indicates strong emotion`
+            };
+        }
+        if (emojiCount >= 3) {
+            return {
+                shouldEngage: true,
+                confidence: 0.7,
+                reasoning: `Multiple emojis (${emojiCount}) indicate emotional expression`
+            };
+        }
+        // Check message length - very short might be reaction, very long might need support
+        if (text.length <= 3 && /^[ха-я]+$/.test(text)) {
+            return {
+                shouldEngage: false,
+                confidence: 0.8,
+                reasoning: 'Very short message, likely not needing response'
+            };
+        }
+        if (text.length > 200 && !context.mentionsBot) {
+            return {
+                shouldEngage: true,
+                confidence: 0.6,
+                reasoning: 'Long message might benefit from supportive reaction'
+            };
+        }
+        // Default: don't engage on ordinary messages
+        return {
+            shouldEngage: false,
+            confidence: 0.9,
+            reasoning: 'Ordinary message without emotional triggers or direct appeals'
+        };
     }
     // Cleanup
     dispose() {

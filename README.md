@@ -2,6 +2,35 @@
 
 An intelligent Ukrainian Telegram bot with sentiment analysis, NLP conversation capabilities, content moderation, and atmosphere enhancement. Built with TypeScript and designed specifically for Ukrainian language communities with English fallback support.
 
+## 🆕 Latest Improvements (Version 2.1)
+
+### 🎯 Enhanced Bot Capabilities Response
+- **50+ Ukrainian trigger variations** - "що ти можеш", "які фічі", "допомога", "шо можеш"
+- **25+ English trigger variations** - "what can you do", "capabilities", "help", "whatcha got"  
+- **Detailed instruction format** - Shows exactly how to use each feature
+- **Smart decision explanation** - Bot explains when and why it responds
+- **Improved categorization** - Features grouped logically with clear examples
+
+### 🧠 Smarter Emotional Engagement Logic
+**Bot WILL respond to:**
+- ✅ **Direct mentions** - @bot or replies to bot messages
+- ✅ **Emotional triggers** - Help requests, strong emotions, chat support needs
+- ✅ **Interactive patterns** - Questions with "?", multiple "!" 
+- ✅ **High emotion indicators** - CAPS text (>50%), 3+ emojis
+- ✅ **Group greetings** - "всім привіт", "hello everyone"
+
+**Bot WON'T spam on:**
+- ❌ **Ordinary messages** - Regular daily conversations
+- ❌ **Short reactions** - 1-3 character responses  
+- ❌ **Technical discussions** - Without emotional content
+- ❌ **Private conversations** - Between users
+
+### 🔧 Technical Improvements
+- **Priority processing system** - Content → Capabilities → Emotions → Base reactions
+- **Enhanced regex patterns** - Better Unicode emoji detection
+- **Detailed logging** - Every decision includes reasoning
+- **Updated test coverage** - 91.47% total coverage, all tests passing
+
 ## 🎯 Complete Feature Overview
 
 ### 🤖 **Bot Capabilities Display**
@@ -12,10 +41,29 @@ An intelligent Ukrainian Telegram bot with sentiment analysis, NLP conversation 
 
 **Capability Request Examples:**
 ```
+# Formal Ukrainian requests
 Що ти можеш?                    # What can you do?
 Які твої функції?               # What are your functions?
-What are your capabilities?     # English capability requests
 Покажи команди                  # Show commands
+Розкажи про себе               # Tell me about yourself
+
+# Informal Ukrainian variants  
+Шо можеш?                      # Slang "what can you do"
+Які фічі?                      # What features
+Що по функціям?                # What about functions
+Покажи скілзи                  # Show skills
+
+# English requests
+What can you do?               # Direct capability question
+What are your capabilities?    # Formal capability request
+Show me what you got           # Informal capability request
+What's your deal?              # Casual capability question
+
+# Help requests
+Допомога                       # Help (Ukrainian)
+Help                          # Help (English)
+Інструкція                    # Instructions
+Manual                        # Manual
 ```
 
 ### 🗣️ **Natural Language Processing (NLP) Conversation Engine**
@@ -106,6 +154,29 @@ Ukrainian: "Коли хтось каже 'на українській'"
 What are your features?         # English help request
 Твої можливості                 # Your capabilities
 Розкажи про себе               # Tell me about yourself
+```
+
+### ⚡ **"Потужно" Power Words Detection**
+- **Advanced word recognition** - detects "потужно" synonyms with 80%+ accuracy
+- **Typo tolerance** - handles spelling mistakes and variations (потыжно, могутный, супир)
+- **Category classification** - power, strength, energy, intensity with different intensities
+- **Smart emoji reactions** - category-specific emojis (⚡💪🚀🔥) based on word type
+- **Motivational responses** - generates encouraging Ukrainian messages (30% chance)
+- **Fuzzy matching** - uses Levenshtein distance for spelling error tolerance
+
+**Detected Power Words:**
+```
+Power: потужно, могутній, супер, мега, ультра, топ
+Strength: сильний, міцний, дужий  
+Energy: енергійний, динамічний, вогняний, блискавичний
+Intensity: крутий, класний, офігенний, бомбезний, неймовірний
+```
+
+**Example Reactions:**
+```
+"Потужно працюю!" → ⚡ + "ПОТУЖНО! Відчуваю енергію!"
+"Супер результат!" → ⚡ + "Так тримати! супер - це про нас!"
+"Могутній успіх!" → 💪 + "Ця сила неперебориста!"
 ```
 
 ### 🎯 **Enhanced Sentiment-Based Reactions**

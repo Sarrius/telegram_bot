@@ -83,9 +83,9 @@ describe('BotCapabilities', () => {
       const response = botCapabilities.generateCapabilitiesResponse();
       
       expect(response).toContain('Привіт!');
-      expect(response).toContain('🤖 Ось що я можу робити:');
-      expect(response).toContain('💬 Розмови');
-      expect(response).toContain('🎭 Розваги');
+      expect(response).toContain('🤖 Ось детальний список моїх можливостей:');
+      expect(response).toContain('💬 Розмови та спілкування');
+      expect(response).toContain('🎭 Розваги та мемчики');
       expect(response).toContain('🇺🇦');
     });
 
@@ -93,14 +93,14 @@ describe('BotCapabilities', () => {
       const response = botCapabilities.generateCapabilitiesResponse('uk', 'Тарас');
       
       expect(response).toContain('Привіт, Тарас!');
-      expect(response).toContain('🤖 Ось що я можу робити:');
+      expect(response).toContain('🤖 Ось детальний список моїх можливостей:');
     });
 
     it('should generate English response when requested', () => {
       const response = botCapabilities.generateCapabilitiesResponse('en');
       
       expect(response).toContain('Hello!');
-      expect(response).toContain('🤖 Here\'s what I can do:');
+      expect(response).toContain('🤖 Here\'s a detailed list of my capabilities:');
       expect(response).toContain('💬 Conversations');
       expect(response).toContain('🎭 Entertainment');
       expect(response).toContain('🇺🇦');
@@ -110,23 +110,23 @@ describe('BotCapabilities', () => {
       const response = botCapabilities.generateCapabilitiesResponse('en', 'John');
       
       expect(response).toContain('Hello, John!');
-      expect(response).toContain('🤖 Here\'s what I can do:');
+      expect(response).toContain('🤖 Here\'s a detailed list of my capabilities:');
     });
 
     it('should include all capability categories', () => {
       const response = botCapabilities.generateCapabilitiesResponse('uk');
       
-      expect(response).toContain('💬 Розмови');
-      expect(response).toContain('🎭 Розваги');
-      expect(response).toContain('👥 Соціальні функції');
-      expect(response).toContain('🛡️ Модерація');
-      expect(response).toContain('🔧 Утиліти');
+      expect(response).toContain('💬 Розмови та спілкування');
+      expect(response).toContain('🎭 Розваги та мемчики');
+      expect(response).toContain('👥 Соціальні функції та атмосфера');
+      expect(response).toContain('🛡️ Модерація та безпека');
+      expect(response).toContain('🔧 Корисні інструменти');
     });
 
     it('should include examples for each capability', () => {
       const response = botCapabilities.generateCapabilitiesResponse('uk');
       
-      expect(response).toContain('Приклади:');
+      expect(response).toContain('📝 _Як викликати:_');
       expect(response).toContain('@bot Привіт! Як справи?');
       expect(response).toContain('Розкажи жарт');
       expect(response).toContain('/meme топ текст | низ текст');
@@ -136,8 +136,8 @@ describe('BotCapabilities', () => {
       const ukrainianResponse = botCapabilities.generateCapabilitiesResponse('uk');
       const englishResponse = botCapabilities.generateCapabilitiesResponse('en');
       
-      expect(ukrainianResponse).toContain('💡 _Просто напишіть мені або згадайте @bot');
-      expect(englishResponse).toContain('💡 _Just message me or mention @bot');
+      expect(ukrainianResponse).toContain('💡 _Просто почніть писати');
+      expect(englishResponse).toContain('💡 _Just start typing');
     });
   });
 
