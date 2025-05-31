@@ -430,86 +430,85 @@ export class BotCapabilities {
       (language === 'uk' ? `Привіт, ${userName}! 👋` : `Hello, ${userName}! 👋`) :
       (language === 'uk' ? 'Привіт! 👋' : 'Hello! 👋');
 
-    const title = language === 'uk' ?
-      '🤖 Ось детальний список моїх можливостей:' :
-      '🤖 Here\'s a detailed list of my capabilities:';
+    if (language === 'uk') {
+      return `${greeting}
 
-    let response = `${greeting}\n\n${title}\n\n`;
+🤖 **Що я вмію:**
 
-    // Group capabilities by category
-    const categories = {
-      conversation: language === 'uk' ? '💬 Розмови та спілкування' : '💬 Conversations',
-      entertainment: language === 'uk' ? '🎭 Розваги та мемчики' : '🎭 Entertainment',
-      social: language === 'uk' ? '👥 Соціальні функції та атмосфера' : '👥 Social Features',
-      moderation: language === 'uk' ? '🛡️ Модерація та безпека' : '🛡️ Moderation',
-      utility: language === 'uk' ? '🔧 Корисні інструменти' : '🔧 Utilities'
-    };
+💬 **Спілкування**
+• Розмови українською
+• Розпізнаю емоції і настрій
+• Відповідаю на @bot
 
-    Object.entries(categories).forEach(([categoryKey, categoryName]) => {
-      const categoryCapabilities = this.capabilities.filter(
-        cap => cap.category === categoryKey
-      );
+🎭 **Розваги**
+• Українські жарти
+• Мемі: /meme текст | текст
+• Реакції на "потужно" ⚡
 
-      if (categoryCapabilities.length > 0) {
-        response += `**${categoryName}**\n`;
+🔧 **Корисне**
+• Новини України
+• Погода в містах
+• Курси валют
 
-        categoryCapabilities.forEach(capability => {
-          const name = language === 'uk' ? capability.nameUk : capability.name;
-          const description = language === 'uk' ? capability.descriptionUk : capability.description;
-          const examples = language === 'uk' ? capability.examplesUk : capability.examples;
+🛡️ **Модерація**
+• Фільтрую нецензурщину
+• Позитивна атмосфера в чаті
 
-          response += `• **${name}**: ${description}\n`;
-          if (examples.length > 0) {
-            response += `  📝 _Як викликати:_ ${examples.map(ex => `"${ex}"`).join(', ')}\n`;
-          }
-          response += '\n';
-        });
-      }
-    });
+👥 **Соціальне**
+• Емоційна підтримка
+• Призначаю ролі користувачам
+• Реакції смайликами
 
-    // Add detailed usage instructions in Ukrainian
-    const detailedInstructions = language === 'uk' ?
-      `📖 **Детальні інструкції:**\n\n` +
-      `🔹 **Для розмови зі мною:** просто згадайте @bot або відповідайте на мої повідомлення\n` +
-      `🔹 **Для створення мемів:** напишіть "створи мем" або "/meme топ текст | низ текст"\n` +
-      `🔹 **Для реакцій:** пишіть емоційні повідомлення, я відреагую смайликами\n` +
-      `🔹 **Для підтримки:** напишіть щось на кшталт "потрібна допомога" або "сумно"\n` +
-      `🔹 **Для жартів:** попросіть "розкажи жарт" або "щось смішне"\n` +
-      `🔹 **Коли написати "потужно":** отримаєте енергійну реакцію ⚡\n\n` +
-      `🤖 **Як я вирішую коли відповідати:**\n` +
-      `✅ Коли мене згадують (@bot)\n` +
-      `✅ На емоційні повідомлення (радість, сум, агресія)\n` +
-      `✅ На запити про допомогу\n` +
-      `✅ На неприйнятний контент (з гумором)\n` +
-      `✅ Коли в чаті довго тихо (підтримую атмосферу)\n` +
-      `❌ НЕ відповідаю на звичайні повсякденні повідомлення\n` +
-      `❌ НЕ спамлю в чаті без потреби` :
-      `📖 **Detailed Instructions:**\n\n` +
-      `🔹 **To chat with me:** just mention @bot or reply to my messages\n` +
-      `🔹 **For memes:** write "create meme" or "/meme top text | bottom text"\n` +
-      `🔹 **For reactions:** write emotional messages, I'll react with emojis\n` +
-      `🔹 **For support:** write something like "need help" or "feeling sad"\n` +
-      `🔹 **For jokes:** ask for "tell a joke" or "something funny"\n` +
-      `🔹 **When you write "powerful":** you'll get an energetic reaction ⚡\n\n` +
-      `🤖 **How I decide when to respond:**\n` +
-      `✅ When mentioned (@bot)\n` +
-      `✅ To emotional messages (joy, sadness, aggression)\n` +
-      `✅ To help requests\n` +
-      `✅ To inappropriate content (with humor)\n` +
-      `✅ When chat is quiet for too long (maintaining atmosphere)\n` +
-      `❌ DON'T respond to ordinary everyday messages\n` +
-      `❌ DON'T spam chat unnecessarily`;
+📱 **Як викликати:**
+• @bot + ваше питання
+• Відповідь на моє повідомлення
+• "Що ти можеш?" "Новини?" "Погода?"
 
-    response += `${detailedInstructions}\n\n`;
+⚙️ **CLI команди:**
+• @bot help - ця довідка
+• @bot status - статус функцій
 
-    // Add footer
-    const footer = language === 'uk' ?
-      '💡 _Просто почніть писати - я розумний і зрозумію що вам потрібно!_\n🇺🇦 _Зроблено для української спільноти з ❤️_' :
-      '💡 _Just start typing - I\'m smart and will understand what you need!_\n🇺🇦 _Made for Ukrainian community with ❤️_';
+💡 _Просто пишіть - я розумію!_ 🇺🇦`;
+    } else {
+      return `${greeting}
 
-    response += `${footer}`;
+🤖 **What I can do:**
 
-    return response;
+💬 **Conversations**
+• Chat in Ukrainian/English
+• Emotion & mood recognition
+• Respond to @bot mentions
+
+🎭 **Entertainment**
+• Ukrainian jokes & stories
+• Memes: /meme text | text
+• React to power words ⚡
+
+🔧 **Utilities**
+• Ukrainian news updates
+• Weather for cities
+• Currency exchange rates
+
+🛡️ **Moderation**
+• Filter inappropriate content
+• Maintain positive atmosphere
+
+👥 **Social**
+• Emotional support
+• User role assignments
+• Emoji reactions
+
+📱 **How to call me:**
+• @bot + your question
+• Reply to my messages
+• "What can you do?" "News?" "Weather?"
+
+⚙️ **CLI commands:**
+• @bot help - this help
+• @bot status - features status
+
+💡 _Just start typing - I understand!_ 🇺🇦`;
+    }
   }
 
   getCapabilityById(id: string): BotCapability | undefined {

@@ -20,16 +20,16 @@ export interface FeatureConfig {
 export class FeatureManager {
   private static instance: FeatureManager;
   private features: FeatureState = {
-    powerWords: true,
-    moderation: true,
-    news: true,
-    weather: true,
-    memes: true,
-    memory: true,
-    nlp: true,
-    atmosphere: true,
-    profanityFilter: true,
-    knowledgeSearch: true
+    powerWords: true,        // Моніторинг "потужно" залишається
+    moderation: false,       // Автоматична модерація вимкнена
+    news: true,              // Новини при прямому запиті
+    weather: true,           // Погода при прямому запиті
+    memes: true,             // Меми при прямому запиті
+    memory: false,           // Автоматичне запам'ятовування вимкнене
+    nlp: false,              // Автоматичні розмови вимкнені
+    atmosphere: false,       // Автоматичне відстеження атмосфери вимкнене
+    profanityFilter: false,  // Автоматична фільтрація вимкнена
+    knowledgeSearch: true    // Пошук при прямому запиті
   };
   
   private constructor() {
@@ -111,19 +111,19 @@ export class FeatureManager {
 
   public resetToDefaults(): string {
     this.features = {
-      powerWords: true,
-      moderation: true,
-      news: true,
-      weather: true,
-      memes: true,
-      memory: true,
-      nlp: true,
-      atmosphere: true,
-      profanityFilter: true,
-      knowledgeSearch: true
+      powerWords: true,        // Моніторинг "потужно" залишається
+      moderation: false,       // Автоматична модерація вимкнена
+      news: true,              // Новини при прямому запиті
+      weather: true,           // Погода при прямому запиті
+      memes: true,             // Меми при прямому запиті
+      memory: false,           // Автоматичне запам'ятовування вимкнене
+      nlp: false,              // Автоматичні розмови вимкнені
+      atmosphere: false,       // Автоматичне відстеження атмосфери вимкнене
+      profanityFilter: false,  // Автоматична фільтрація вимкнена
+      knowledgeSearch: true    // Пошук при прямому запиті
     };
     this.saveConfig();
-    return '🔄 Конфігурацію скинуто до стандартних налаштувань';
+    return '🔄 Конфігурацію скинуто до стандартних налаштувань (моніторинг чату вимкнений, пряме звернення працює)';
   }
 
   private saveConfig(): void {
