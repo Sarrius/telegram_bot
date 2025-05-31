@@ -9,27 +9,56 @@ export interface CLICommandMatch {
 
 export class CLICommandDetector {
   private readonly helpPatterns = [
+    // Тільки точні CLI команди
     { pattern: /^help$/i, language: 'en' as const },
     { pattern: /^\/help$/i, language: 'en' as const },
-    { pattern: /^commands$/i, language: 'en' as const },
-    { pattern: /show\s+commands/i, language: 'en' as const },
-    { pattern: /list\s+commands/i, language: 'en' as const },
-    { pattern: /what\s+commands/i, language: 'en' as const },
-    { pattern: /available\s+commands/i, language: 'en' as const },
-    { pattern: /@bot\s+cli\s+help/i, language: 'en' as const },
-    { pattern: /@bot\s+help/i, language: 'en' as const }
+    { pattern: /^cli\s+help$/i, language: 'en' as const },
+    { pattern: /^\/cli\s+help$/i, language: 'en' as const },
+    
+    // З ботом - тільки з явним CLI
+    { pattern: /@bot\s+cli\s+help$/i, language: 'en' as const },
+    { pattern: /@\w+_bot\s+cli\s+help$/i, language: 'en' as const },
+    { pattern: /@bot\s+\/cli\s+help$/i, language: 'en' as const },
+    { pattern: /@\w+_bot\s+\/cli\s+help$/i, language: 'en' as const }
   ];
 
   private readonly statusPatterns = [
+    // Тільки точні CLI команди
     { pattern: /^status$/i, language: 'en' as const },
     { pattern: /^\/status$/i, language: 'en' as const },
-    { pattern: /@bot\s+status/i, language: 'en' as const },
-    { pattern: /@bot\s+cli\s+status/i, language: 'en' as const }
+    { pattern: /^cli\s+status$/i, language: 'en' as const },
+    { pattern: /^\/cli\s+status$/i, language: 'en' as const },
+    
+    // З ботом - тільки з явним CLI
+    { pattern: /@bot\s+cli\s+status$/i, language: 'en' as const },
+    { pattern: /@\w+_bot\s+cli\s+status$/i, language: 'en' as const },
+    { pattern: /@bot\s+\/cli\s+status$/i, language: 'en' as const },
+    { pattern: /@\w+_bot\s+\/cli\s+status$/i, language: 'en' as const }
   ];
 
   private readonly featurePatterns = [
+    // Тільки точні CLI команди
     { pattern: /^features$/i, language: 'en' as const },
-    { pattern: /@bot\s+features/i, language: 'en' as const }
+    { pattern: /^\/features$/i, language: 'en' as const },
+    { pattern: /^cli\s+features$/i, language: 'en' as const },
+    { pattern: /^\/cli\s+features$/i, language: 'en' as const },
+    
+    // З ботом - тільки з явним CLI
+    { pattern: /@bot\s+cli\s+features$/i, language: 'en' as const },
+    { pattern: /@\w+_bot\s+cli\s+features$/i, language: 'en' as const },
+    { pattern: /@bot\s+\/cli\s+features$/i, language: 'en' as const },
+    { pattern: /@\w+_bot\s+\/cli\s+features$/i, language: 'en' as const }
+  ];
+
+  private readonly cliModePatterns = [
+    // Вхід в CLI режим
+    { pattern: /^\/cli$/i, language: 'en' as const },
+    { pattern: /^cli$/i, language: 'en' as const },
+    { pattern: /^cli\s+mode$/i, language: 'en' as const },
+    { pattern: /@bot\s+\/cli$/i, language: 'en' as const },
+    { pattern: /@\w+_bot\s+\/cli$/i, language: 'en' as const },
+    { pattern: /@bot\s+cli$/i, language: 'en' as const },
+    { pattern: /@\w+_bot\s+cli$/i, language: 'en' as const }
   ];
 
   constructor() {
@@ -81,6 +110,20 @@ export class CLICommandDetector {
       }
     }
 
+    // Перевіряємо CLI режим
+    for (const { pattern, language } of this.cliModePatterns) {
+      if (pattern.test(trimmedText)) {
+        return {
+          isCommand: true,
+          command: 'cli',
+          args: [],
+          confidence: 0.90,
+          language,
+          trigger: pattern.source
+        };
+      }
+    }
+
     // Перевіряємо enable/disable команди
     const featureControlMatch = this.detectFeatureControl(trimmedText);
     if (featureControlMatch.isCommand) {
@@ -99,14 +142,29 @@ export class CLICommandDetector {
 
   private detectFeatureControl(text: string): CLICommandMatch {
     const patterns = [
-      { pattern: /enable\s+(\w+)/i, command: 'enable', language: 'en' as const },
-      { pattern: /turn\s+on\s+(\w+)/i, command: 'enable', language: 'en' as const },
-      { pattern: /disable\s+(\w+)/i, command: 'disable', language: 'en' as const },
-      { pattern: /turn\s+off\s+(\w+)/i, command: 'disable', language: 'en' as const },
-      { pattern: /toggle\s+(\w+)/i, command: 'toggle', language: 'en' as const },
-      { pattern: /@bot\s+enable\s+(\w+)/i, command: 'enable', language: 'en' as const },
-      { pattern: /@bot\s+disable\s+(\w+)/i, command: 'disable', language: 'en' as const },
-      { pattern: /@bot\s+toggle\s+(\w+)/i, command: 'toggle', language: 'en' as const }
+      // Прямі CLI команди
+      { pattern: /^enable\s+(\w+)$/i, command: 'enable', language: 'en' as const },
+      { pattern: /^disable\s+(\w+)$/i, command: 'disable', language: 'en' as const },
+      { pattern: /^toggle\s+(\w+)$/i, command: 'toggle', language: 'en' as const },
+      
+      // З слеш командами
+      { pattern: /^\/enable\s+(\w+)$/i, command: 'enable', language: 'en' as const },
+      { pattern: /^\/disable\s+(\w+)$/i, command: 'disable', language: 'en' as const },
+      { pattern: /^\/toggle\s+(\w+)$/i, command: 'toggle', language: 'en' as const },
+      
+      // З CLI префіксом
+      { pattern: /^cli\s+enable\s+(\w+)$/i, command: 'enable', language: 'en' as const },
+      { pattern: /^cli\s+disable\s+(\w+)$/i, command: 'disable', language: 'en' as const },
+      { pattern: /^cli\s+toggle\s+(\w+)$/i, command: 'toggle', language: 'en' as const },
+      
+      // З ботом - тільки з явним CLI
+      { pattern: /@bot\s+cli\s+enable\s+(\w+)$/i, command: 'enable', language: 'en' as const },
+      { pattern: /@bot\s+cli\s+disable\s+(\w+)$/i, command: 'disable', language: 'en' as const },
+      { pattern: /@bot\s+cli\s+toggle\s+(\w+)$/i, command: 'toggle', language: 'en' as const },
+      
+      { pattern: /@\w+_bot\s+cli\s+enable\s+(\w+)$/i, command: 'enable', language: 'en' as const },
+      { pattern: /@\w+_bot\s+cli\s+disable\s+(\w+)$/i, command: 'disable', language: 'en' as const },
+      { pattern: /@\w+_bot\s+cli\s+toggle\s+(\w+)$/i, command: 'toggle', language: 'en' as const }
     ];
 
     for (const { pattern, command, language } of patterns) {

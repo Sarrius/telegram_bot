@@ -79,10 +79,6 @@ if (appConfig.cliMode) {
         console.warn('⚠️ NEWS_API_KEY or WEATHER_API_KEY not set - news and weather features will be disabled');
       }
 
-      // Initialize the enhanced message handler with all features
-      messageHandler = new EnhancedMessageHandler();
-      console.log('🧠 Enhanced message handler initialized with NLP, content detection, and meme generation');
-
       // Create bot instance with simple polling
       botInstance = new TelegramBot(appConfig.telegram.token, { 
         polling: {
@@ -131,6 +127,10 @@ if (appConfig.cliMode) {
         newsWeatherHandler = new NewsWeatherHandler(appConfig.newsWeather.newsApiKey, appConfig.newsWeather.weatherApiKey, botInstance!);
         console.log('📰 News and weather monitoring initialized');
       }
+
+      // Initialize the enhanced message handler with all features including news/weather
+      messageHandler = new EnhancedMessageHandler(undefined, undefined, undefined, newsWeatherHandler);
+      console.log('🧠 Enhanced message handler initialized with NLP, content detection, meme generation, and news/weather');
       
       // Set up message handler
       botInstance!.on('message', handleMessage);
@@ -214,27 +214,7 @@ async function handleMessage(msg: any) {
       memeRequest: msg.text.toLowerCase().includes('meme') ? msg.text : undefined
     };
 
-    // First check if it's a news/weather request
-    let newsWeatherResponse = '';
-    if (newsWeatherHandler) {
-      newsWeatherResponse = await newsWeatherHandler.handleNewsCommand(msg.chat.id, msg.text);
-    }
-
-    // If we have a news/weather response, send it and return
-    if (newsWeatherResponse) {
-      console.log(`📰 Sending news/weather response: ${newsWeatherResponse.substring(0, 50)}...`);
-      await botInstance.sendMessage(msg.chat.id, newsWeatherResponse, {
-        parse_mode: 'Markdown',
-        reply_to_message_id: msg.message_id,
-        allow_sending_without_reply: true,
-        disable_web_page_preview: true
-      }).catch(err => {
-        console.error('❌ Error sending news/weather response:', err.message);
-      });
-      return;
-    }
-
-    // Use the enhanced message handler for other messages
+    // Use the enhanced message handler for all messages (including news/weather)
     const response = await messageHandler.handleMessage(context);
 
     // Handle different response types
