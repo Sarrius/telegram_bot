@@ -294,7 +294,7 @@ describe('NewsWeatherHandler', () => {
         matchedKeyword: 'підписатися'
       });
       await handler.handleNewsCommand(2001, 'підписатися');
-      
+
       // Перевіряємо що чат підписаний
       const subscribedChats = handler.getSubscribedChats();
       expect(subscribedChats).toContain(2001);
@@ -317,7 +317,7 @@ describe('NewsWeatherHandler', () => {
         matchedKeyword: 'підписатися'
       });
       await handler.handleNewsCommand(3001, 'підписатися');
-      
+
       // Перевіряємо що моніторинг увімкнено
       const status = handler.getSchedulerStatus();
       expect(status).toContain('critical_monitoring');

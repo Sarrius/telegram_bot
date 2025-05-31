@@ -202,14 +202,14 @@ export class NewsWeatherHandler {
    */
   async handleNewsCommand(chatId: number, messageText: string): Promise<string> {
     try {
-      // Використовуємо fuzzy matching для розпізнавання команд
-      const commandMatch = this.fuzzyMatcher.recognizeCommand(messageText);
-      
-      if (!commandMatch) {
-        return '';
-      }
+    // Використовуємо fuzzy matching для розпізнавання команд
+    const commandMatch = this.fuzzyMatcher.recognizeCommand(messageText);
+    
+    if (!commandMatch) {
+      return '';
+    }
 
-      console.log(`Розпізнано команду: ${commandMatch.type} (впевненість: ${commandMatch.confidence})`);
+    console.log(`Розпізнано команду: ${commandMatch.type} (впевненість: ${commandMatch.confidence})`);
 
       switch (commandMatch.type) {
         case 'news':
@@ -268,10 +268,10 @@ export class NewsWeatherHandler {
       // Спочатку показуємо критичні новини з акцентом
       if (criticalNews.length > 0) {
         message += `🚨 **КРИТИЧНІ НОВИНИ:**\n\n`;
-        
+      
         criticalNews.forEach((item, index) => {
           message += `🚨 **${item.title}**\n`;
-          if (item.description) {
+        if (item.description) {
             message += `${item.description}\n`;
           }
           message += `🔗 [ЧИТАТИ ПОВНІСТЮ](${item.url})\n`;
@@ -294,7 +294,7 @@ export class NewsWeatherHandler {
             hour: '2-digit', 
             minute: '2-digit' 
           })}\n\n`;
-        });
+      });
       }
 
       if (criticalNews.length === 0 && otherNews.length === 0) {

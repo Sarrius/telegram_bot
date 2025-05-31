@@ -296,9 +296,9 @@ export class NewsCommandsFuzzyMatcher {
 
       // Fuzzy matching тільки якщо ще не знайшли хороший збіг
       if (bestConfidence < 0.9) {
-              // Fuzzy matching для основного слова
-      if (keyword.word.length >= 4) { // Тільки для довших слів
-        const fuzzyMatch = this.fuzzyMatch(text, keyword.word);
+        // Fuzzy matching для основного слова
+        if (keyword.word.length >= 4) { // Тільки для довших слів
+          const fuzzyMatch = this.fuzzyMatch(text, keyword.word);
         // Спеціальне підвищення для підписки при наявності "підпіска"
         let adjustedConfidence = fuzzyMatch.confidence;
         if (type === 'subscribe' && keyword.word === 'підписка' && text.includes('підпіска')) {
@@ -306,15 +306,15 @@ export class NewsCommandsFuzzyMatcher {
         }
         
         if (adjustedConfidence > bestConfidence && adjustedConfidence >= 0.8) { // Підвищений поріг
-          bestMatch = {
-            type,
+            bestMatch = {
+              type,
             confidence: adjustedConfidence,
-            originalText: text,
-            matchedKeyword: keyword.word
-          };
+              originalText: text,
+              matchedKeyword: keyword.word
+            };
           bestConfidence = adjustedConfidence;
+          }
         }
-      }
 
         // Fuzzy matching для варіацій тільки якщо потрібно
         if (bestConfidence < 0.85) {

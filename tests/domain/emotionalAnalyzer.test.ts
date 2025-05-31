@@ -181,7 +181,7 @@ describe('EmotionalAnalyzer', () => {
 
       // If both profiles have emotional content, repeated should be higher
       if (normalProfile.intensity > 0 && repeatedProfile.intensity > 0) {
-        expect(repeatedProfile.intensity).toBeGreaterThan(normalProfile.intensity);
+      expect(repeatedProfile.intensity).toBeGreaterThan(normalProfile.intensity);
       } else {
         // At least verify that analysis was performed
         expect(repeatedProfile.reasoning).toBeDefined();

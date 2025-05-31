@@ -164,29 +164,29 @@ export class EnhancedMessageHandler {
 
       // Step 1: Check for profanity/inappropriate language (high priority)
       if (this.featureManager.isEnabled('moderation') || this.featureManager.isEnabled('profanityFilter')) {
-        const moderationAnalysis = this.moderationHandler.analyzeMessage(
-          context.text,
-          context.chatType || 'group',
-          context.userId,
-          context.chatId
-        );
+      const moderationAnalysis = this.moderationHandler.analyzeMessage(
+        context.text,
+        context.chatType || 'group',
+        context.userId,
+        context.chatId
+      );
 
-        if (moderationAnalysis.shouldRespond) {
-          console.log(`🔴 Profanity detected: ${moderationAnalysis.responseType} response (${(moderationAnalysis.confidence * 100).toFixed(1)}%)`);
-          return {
-            ...this.createBaseResponse(),
-            shouldReply: true,
-            reply: moderationAnalysis.response,
+      if (moderationAnalysis.shouldRespond) {
+        console.log(`🔴 Profanity detected: ${moderationAnalysis.responseType} response (${(moderationAnalysis.confidence * 100).toFixed(1)}%)`);
+        return {
+          ...this.createBaseResponse(),
+          shouldReply: true,
+          reply: moderationAnalysis.response,
+          confidence: moderationAnalysis.confidence,
+          reasoning: moderationAnalysis.reasoning,
+          moderationResponse: {
+            type: moderationAnalysis.responseType,
+            message: moderationAnalysis.response,
             confidence: moderationAnalysis.confidence,
-            reasoning: moderationAnalysis.reasoning,
-            moderationResponse: {
-              type: moderationAnalysis.responseType,
-              message: moderationAnalysis.response,
-              confidence: moderationAnalysis.confidence,
-              reasoning: moderationAnalysis.reasoning
-            },
-            responseType: 'moderation'
-          };
+            reasoning: moderationAnalysis.reasoning
+          },
+          responseType: 'moderation'
+        };
         }
       }
 
@@ -293,27 +293,27 @@ export class EnhancedMessageHandler {
 
       // Step 4: Check for power words ("потужно" синоніми) with typo tolerance
       if (this.featureManager.isEnabled('powerWords')) {
-        const powerWordMatch = this.powerWordsDetector.getBestPowerWordMatch(context.text);
-        if (powerWordMatch) {
-          console.log(`⚡ Power word detected: "${powerWordMatch.originalWord}" -> "${powerWordMatch.matchedWord}" (${(powerWordMatch.confidence * 100).toFixed(1)}%)`);
-          
-          const emoji = this.powerWordsDetector.getReactionEmoji(powerWordMatch);
-          const motivationalResponse = this.powerWordsDetector.getMotivationalResponse(powerWordMatch);
-          
-          return {
-            ...this.createBaseResponse(),
-            shouldReact: true,
-            reaction: emoji,
+      const powerWordMatch = this.powerWordsDetector.getBestPowerWordMatch(context.text);
+      if (powerWordMatch) {
+        console.log(`⚡ Power word detected: "${powerWordMatch.originalWord}" -> "${powerWordMatch.matchedWord}" (${(powerWordMatch.confidence * 100).toFixed(1)}%)`);
+        
+        const emoji = this.powerWordsDetector.getReactionEmoji(powerWordMatch);
+        const motivationalResponse = this.powerWordsDetector.getMotivationalResponse(powerWordMatch);
+        
+        return {
+          ...this.createBaseResponse(),
+          shouldReact: true,
+          reaction: emoji,
             shouldReply: false, // Тільки реакція, без текстової відповіді
-            confidence: powerWordMatch.confidence,
+          confidence: powerWordMatch.confidence,
             reasoning: `Power word detected: ${powerWordMatch.originalWord} -> ${powerWordMatch.matchedWord} (reaction only)`,
-            powerWordReaction: {
-              emoji,
-              match: powerWordMatch,
-              motivationalResponse
-            },
-            responseType: 'power_word'
-          };
+          powerWordReaction: {
+            emoji,
+            match: powerWordMatch,
+            motivationalResponse
+          },
+          responseType: 'power_word'
+        };
         }
       }
 
