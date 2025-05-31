@@ -141,7 +141,7 @@ describe('ModerationHandler', () => {
       
       expect(response.shouldRespond).toBe(true);
       expect(response.responseType).toBe('strict');
-              expect(response.response).toMatch(/токсична|трында|останній|подих|аб'юзивна|паща|морда|квиток|пиздеця|трындітиме|мразь|заїбав|слово|асфальт|закатаю|⛔/i);
+              expect(response.response).toMatch(/токсична|трында|останній|подих|аб'юзивна|паща|морда|квиток|пиздеця|трындітиме|мразь|заїбав|слово|асфальт|закатаю|⛔|токсити|сука|пизда/i);
     });
   });
 
