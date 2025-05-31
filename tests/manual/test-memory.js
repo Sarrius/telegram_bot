@@ -1,4 +1,4 @@
-const { UserMemory } = require('./dist/domain/userMemory');
+const { UserMemory } = require('../../dist/domain/userMemory');
 
 function testMemorySystem() {
     console.log('🧠 Тестування системи пам\'яті бота\n');

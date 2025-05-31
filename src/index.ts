@@ -261,11 +261,20 @@ async function handleMessage(msg: any) {
         });
       }
     } else {
-      // Емоджі реакції більше не надсилаються як повідомлення
-      // Бот тепер тільки відповідає текстом коли це дійсно потрібно
+      // Додаємо реакцію до повідомлення в Telegram
       if (response.shouldReact && response.reaction) {
-        console.log(`🎯 Reaction detected: ${response.reaction} (confidence: ${(response.confidence * 100).toFixed(1)}%) - но не надсилаємо як повідомлення`);
-        // Просто логуємо реакцію, але не надсилаємо її
+        console.log(`🎯 Adding reaction: ${response.reaction} (confidence: ${(response.confidence * 100).toFixed(1)}%)`);
+        try {
+          // TypeScript типи для setMessageReaction ще не включені в node-telegram-bot-api
+          // Викликаємо API безпосередньо
+          await (botInstance as any).setMessageReaction(msg.chat.id, msg.message_id, [
+            { type: 'emoji', emoji: response.reaction }
+          ]);
+          console.log(`✅ Reaction ${response.reaction} added successfully`);
+        } catch (err: any) {
+          console.error('❌ Error adding reaction:', err.message);
+          // Fallback: не надсилаємо емоджі як повідомлення, просто логуємо
+        }
       }
 
       // Send reply if recommended

@@ -2,7 +2,47 @@
 
 An intelligent Ukrainian Telegram bot with sentiment analysis, NLP conversation capabilities, content moderation, and atmosphere enhancement. Built with TypeScript and designed specifically for Ukrainian language communities with English fallback support.
 
-## 🆕 Latest Improvements (Version 2.3)
+## 🆕 Latest Improvements (Version 2.4)
+
+### 🎛️ **Feature Management System**
+- **Real-time feature control** - Enable/disable any bot function on-the-fly
+- **9 controllable features** - powerWords, moderation, news, weather, memes, memory, nlp, atmosphere, profanityFilter
+- **CLI interface** - Complete command-line management with interactive commands
+- **Console-based control** - Manage features directly from terminal without Telegram
+- **Feature status display** - Real-time status overview with emoji indicators
+- **Persistent storage** - Feature states saved in runtime environment
+- **Centralized configuration** - Single point of control for all bot functionality
+- **Enhanced help system** - Dual-column display showing commands and feature status
+
+**Feature Management Commands:**
+```bash
+# CLI Mode
+npm run cli                    # Start interactive CLI mode
+
+# Feature Control
+enable powerWords             # Enable power word reactions
+disable moderation           # Disable content moderation  
+toggle memes                 # Toggle meme generation
+status                       # Show all feature statuses
+enable-all                   # Enable all features
+disable-all                  # Disable all features
+reset-features               # Reset to default configuration
+feature-help                 # Show detailed feature guide
+
+# Interactive Chat Testing
+chat                         # Start bot chat simulation
+```
+
+**Available Features for Control:**
+- ⚡ **powerWords** - Reactions to power words ("потужно", "супер", etc.)
+- 🛡️ **moderation** - Content moderation and profanity filtering
+- 📰 **news** - News monitoring and delivery
+- 🌤️ **weather** - Weather information and alerts
+- 🎭 **memes** - Meme generation and suggestions
+- 🧠 **memory** - User memory and behavioral tracking
+- 💬 **nlp** - NLP conversations and context understanding
+- 🌟 **atmosphere** - Chat atmosphere enhancement
+- 🚫 **profanityFilter** - Profanity detection and filtering
 
 ### 🎯 **100% Test Coverage Achievement**
 - **657/657 tests passing** - Full test suite completion ✅
@@ -678,8 +718,31 @@ Bot: 🎯 Час для цікавого факту!
 1. **Clone the repository**
 2. **Install dependencies**: `npm install`
 3. **Set up environment variables** (see DEPLOYMENT.md)
-4. **Run tests**: `npm test` (417 tests, 91.86% coverage)
+4. **Run tests**: `npm test` (657 tests, 100% coverage)
 5. **Start the bot**: `npm start`
+
+### 🎛️ **Feature Management & Testing**
+
+**CLI Mode with Feature Control:**
+```bash
+npm run cli                    # Start interactive CLI mode
+```
+
+**Available Commands:**
+```bash
+# Feature Management
+enable powerWords             # Enable power word reactions
+disable moderation           # Disable content moderation
+toggle memes                 # Toggle meme generation
+status                       # Show all feature statuses
+feature-help                 # Detailed feature guide
+
+# Testing & Diagnostics
+chat                         # Interactive bot simulation
+test                         # Run test scenarios
+stats                        # Bot statistics
+health                       # System health check
+```
 
 For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
 
@@ -755,3 +818,253 @@ MIT License - Feel free to use this bot for your Ukrainian communities!
 ---
 
 **Made with ❤️ for the Ukrainian community** 
+
+## Функції
+
+- 📱 **Обробка повідомлень** українською мовою з пріоритетом
+- 🤖 **NLP розмови** з розумінням контексту та емоцій
+- 🎭 **Генерація мемів** з контекстним та випадковим змістом
+- ⚡ **Визначення ключових слів** для реакцій
+- 🔍 **Модерація контенту** та фільтрація нецензурності
+- 🧠 **Система пам'яті** користувачів з аналізом поведінки
+- 🌟 **Підвищення атмосфери** у групових чатах
+- 📊 **Аналітика** та статистика взаємодій
+
+## Статистика тестування
+
+- ✅ **657/657 тестів пройдено (100% покриття)**
+- 🧪 **21 тестовий набір** для всіх компонентів
+- 🎛️ **Feature Management система** повністю протестована
+- 🇺🇦 **Пріоритет української мови** у всіх взаємодіях
+
+## Локальне тестування в CLI режимі 🚀
+
+Для тестування бота локально без Telegram API:
+
+### 1. Запуск CLI режиму
+
+```bash
+# Звичайний CLI режим з командами
+npm run dev -- --cli
+
+# CLI з інтерактивним чатом
+npm run dev -- --cli
+# потім введіть: chat
+```
+
+### 2. Інтерактивний чат режим
+
+```bash
+# У CLI введіть команду:
+chat
+```
+
+**Можливості чат-режиму:**
+
+- 💬 **Спілкування як у групі** - просто пишіть повідомлення
+- 🎯 **Тестування всіх сценаріїв** - мемів, модерації, пам'яті
+- 🔍 **Детальна діагностика** - показує reasoning та confidence
+- 📊 **Статистика в реальному часі** - `/stats`
+
+**Спеціальні команди в чаті:**
+
+```bash
+/quit або /exit  # вийти з чату
+/stats           # показати статистику
+/reset           # скинути контекст
+@bot [текст]     # пряме звернення до бота
+```
+
+### 3. Приклади тестування
+
+**Звичайні повідомлення:**
+```
+Привіт! Як справи?
+Що думаєш про цю ситуацію?
+Мені сьогодні сумно
+```
+
+**Тестування мемів:**
+```
+Зроби мем про котів
+мем про програмістів
+```
+
+**Тестування модерації:**
+```
+[ненормативна лексика] - побачите як працює фільтр
+```
+
+**Тестування пам'яті:**
+```
+Допоможи мені, будь ласка
+# після модерації: Вибач за лайку вчора
+```
+
+### 4. CLI команди
+
+```bash
+help      # список всіх команд
+config    # поточна конфігурація
+stats     # детальна статистика
+test      # запуск тестових сценаріїв
+health    # перевірка здоров'я системи
+features  # статус функцій
+memory    # статистика пам'яті
+profanity # тест фільтра нецензурщини
+fuzzy     # тест fuzzy matching
+chat      # інтерактивний чат
+exit      # вихід
+```
+
+## Конфігурація 
+
+### 🌐 API для новин і погоди
+
+Для роботи функцій новин та погоди потрібно отримати безкоштовні API ключі:
+
+#### 1. NewsAPI для українських новин
+
+**Крок 1: Реєстрація на NewsAPI**
+1. Йдіть на [newsapi.org](https://newsapi.org/)
+2. Натисніть "Get API Key" → "Register"
+3. Заповніть форму (Name, Email, Password)
+4. Оберіть план "Developer" (безкоштовний, 1000 запитів/день)
+5. Підтвердіть email
+
+**Крок 2: Отримайте ключ**
+- Після входу побачите свій API ключ
+- Приклад: `a1b2c3d4e5f6789abc123def456ghi78`
+
+#### 2. OpenWeatherMap для погоди
+
+**Крок 1: Реєстрація на OpenWeatherMap**
+1. Йдіть на [openweathermap.org](https://openweathermap.org/api)
+2. Натисніть "Subscribe" під "Current Weather Data"
+3. Оберіть "Free" план (1000 запитів/день)
+4. Створіть акаунт (Name, Email, Password)
+
+**Крок 2: Отримайте API ключ**
+- Йдіть у [My API keys](https://home.openweathermap.org/api_keys)
+- Скопіюйте згенерований ключ
+- Приклад: `9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c`
+
+#### 3. Налаштування в проекті
+
+**Створіть файл `.env`:**
+```env
+# Telegram Bot (обов'язково)
+BOT_TOKEN=your_telegram_bot_token_here
+
+# API для новин (NewsAPI)
+NEWS_API_KEY=your_newsapi_key_here
+ENABLE_NEWS_MONITORING=true
+
+# API для погоди (OpenWeatherMap)  
+WEATHER_API_KEY=your_openweather_key_here
+ENABLE_WEATHER_MONITORING=true
+
+# Мови та регіон
+PRIMARY_LANGUAGE=uk
+DEFAULT_CITY=Київ
+
+# Опціонально - для мемів
+IMGFLIP_USERNAME=your_imgflip_username
+IMGFLIP_PASSWORD=your_imgflip_password
+
+# Порт для деплойменту
+PORT=3000
+```
+
+#### 4. Перевірка роботи API
+
+**Тестування в CLI:**
+```bash
+# Збираємо і запускаємо CLI
+npm run build
+npm run dev -- --cli
+
+# У CLI перевіряємо:
+health    # показує статус API
+config    # показує конфігурацію
+test      # тестує всі функції
+```
+
+**Тестування новин і погоди:**
+```bash
+# У CLI режимі:
+chat
+
+# Потім тестуйте команди:
+Які новини?
+Яка погода в Києві?
+Підписатися на новини
+```
+
+#### 5. Функції що стануть доступні
+
+**📰 Новини:**
+- Ранкові зводки (8:00-10:00) з українських джерел
+- Критичні новини (кожні 30 хв)
+- Новини за запитом: "Які новини?", "Що відбувається?"
+- Джерела: Українська правда, УНН, ТСН, УНІАН
+
+**🌤 Погода:**
+- Поточна погода для українських міст
+- Попередження про небезпечну погоду
+- Погода за запитом: "Яка погода?", "Погода в Львові"
+- Температура в Цельсіях, швидкість вітру в км/год
+
+#### 6. Команди для новин і погоди
+
+```bash
+# Новини
+"Які новини?"
+"Що відбувається в світі?"
+"Свіжі новини"
+"Що твориться?"
+
+# Погода
+"Яка погода?"
+"Погода в Києві"
+"Як на вулиці?"
+"Температура"
+
+# Підписки
+"Підписатися на новини"
+"Ранкові зводки"
+"Відписатися від новин"
+```
+
+### ⚠️ Лімити безкоштовних планів
+
+**NewsAPI (Developer план):**
+- 1,000 запитів/день
+- Затримка новин до 15 хвилин
+- Тільки новини за останній місяць
+
+**OpenWeatherMap (Free план):**
+- 1,000 запитів/день  
+- 60 запитів/хвилину
+- Поточна погода + прогноз на 5 днів
+
+**💡 Порада:** Цих лімітів достатньо для тестування та невеликих груп. Для продакшн використання розгляньте платні плани.
+
+### 🔧 Troubleshooting
+
+**Не працюють новини:**
+```bash
+# Перевірте ключ NewsAPI
+curl "https://newsapi.org/v2/everything?q=Ukraine&apiKey=YOUR_KEY"
+```
+
+**Не працює погода:**
+```bash
+# Перевірте ключ OpenWeatherMap
+curl "https://api.openweathermap.org/data/2.5/weather?q=Kyiv,UA&appid=YOUR_KEY"
+```
+
+**Помилки в логах:**
+- `⚠️ NEWS_API_KEY not set` - додайте NEWS_API_KEY у .env
+- `⚠️ WEATHER_API_KEY not set` - додайте WEATHER_API_KEY у .env
+- `API rate limit exceeded` - перевищено ліміт запитів, зачекайте

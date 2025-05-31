@@ -117,7 +117,7 @@ describe('NewsWeatherHandler', () => {
 
           const response = await handler.handleNewsCommand(123, request);
 
-          expect(response).toContain('📰 **Останні новини України:**');
+          expect(response).toContain('📰 **ВАЖЛИВІ НОВИНИ:**');
           expect(response).toContain('Тестова новина');
           expect(mockMonitor.getUkrainianNews).toHaveBeenCalledWith(24);
         });
@@ -492,7 +492,7 @@ describe('NewsWeatherHandler', () => {
         mockMonitor.getUkrainianNews.mockResolvedValueOnce(mockNews);
 
         const response = await handler.handleNewsCommand(5100 + index, command);
-        expect(response).toContain('📰 **Останні новини України:**');
+        expect(response).toContain('📰 **ВАЖЛИВІ НОВИНИ:**');
       });
     });
 

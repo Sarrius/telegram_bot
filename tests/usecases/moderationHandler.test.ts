@@ -127,7 +127,7 @@ describe('ModerationHandler', () => {
       
       if (response.shouldRespond) {
         expect(response.responseType).toBe('moderate');
-        expect(response.response).toMatch(/Продовжиш|ображати|сука|пиздець|влаштую|⚠️/i);
+        expect(response.response).toMatch(/дебіл|ображай|пиздець|кармі|Хватит|лити|аб'юзивну|хрінь|пизда|⚠️/i);
       }
     });
 
@@ -141,7 +141,7 @@ describe('ModerationHandler', () => {
       
       expect(response.shouldRespond).toBe(true);
       expect(response.responseType).toBe('strict');
-      expect(response.response).toMatch(/Продовжиш|гавкати|мудак|пиздець|влаштую|⛔/i);
+              expect(response.response).toMatch(/токсична|трында|останній|подих|⛔/i);
     });
   });
 

@@ -1,6 +1,7 @@
 // CLI Handler для командного режиму
 import { appConfig, getSafeConfig } from '../config/appConfig';
 import { EnhancedMessageHandler } from '../usecases/enhancedMessageHandler';
+import { FeatureManager } from '../config/featureManager';
 
 export interface CLICommand {
   name: string;
@@ -11,8 +12,10 @@ export interface CLICommand {
 export class CLIHandler {
   private commands: Map<string, CLICommand> = new Map();
   private messageHandler?: EnhancedMessageHandler;
+  private featureManager: FeatureManager;
 
   constructor() {
+    this.featureManager = FeatureManager.getInstance();
     this.initializeCommands();
   }
 
@@ -29,6 +32,19 @@ export class CLIHandler {
     this.registerCommand('memory', 'Показати статистику пам\'яті', this.showMemoryStats.bind(this));
     this.registerCommand('profanity', 'Тестувати фільтр нецензурщини', this.testProfanityFilter.bind(this));
     this.registerCommand('fuzzy', 'Тестувати fuzzy matching', this.testFuzzyMatching.bind(this));
+    this.registerCommand('powerwords', 'Тестувати детектор потужних слів', this.testPowerWordsDetector.bind(this));
+    this.registerCommand('chat', 'Почати інтерактивний чат із ботом', this.startInteractiveChat.bind(this));
+    
+    // Команди управління функціями
+    this.registerCommand('enable', 'Увімкнути функцію (enable <назва>)', this.enableFeature.bind(this));
+    this.registerCommand('disable', 'Вимкнути функцію (disable <назва>)', this.disableFeature.bind(this));
+    this.registerCommand('toggle', 'Перемкнути функцію (toggle <назва>)', this.toggleFeature.bind(this));
+    this.registerCommand('status', 'Показати статус всіх функцій', this.showFeatureStatus.bind(this));
+    this.registerCommand('enable-all', 'Увімкнути всі функції', this.enableAllFeatures.bind(this));
+    this.registerCommand('disable-all', 'Вимкнути всі функції', this.disableAllFeatures.bind(this));
+    this.registerCommand('reset-features', 'Скинути функції до стандартних', this.resetFeatures.bind(this));
+    this.registerCommand('feature-help', 'Довідка по функціях', this.showFeatureHelp.bind(this));
+    
     this.registerCommand('exit', 'Вийти з CLI режиму', this.exit.bind(this));
   }
 
@@ -109,6 +125,13 @@ export class CLIHandler {
 
   private async executeCommand(input: string): Promise<void> {
     const [commandName, ...args] = input.split(' ');
+    
+    // Спеціальна обробка команд з аргументами
+    if (commandName === 'enable' || commandName === 'disable' || commandName === 'toggle') {
+      await this.handleFeatureCommand(commandName, args);
+      return;
+    }
+
     const command = this.commands.get(commandName);
 
     if (!command) {
@@ -124,19 +147,84 @@ export class CLIHandler {
     }
   }
 
+  private async handleFeatureCommand(command: string, args: string[]): Promise<void> {
+    if (args.length === 0) {
+      console.log(`❌ Використання: ${command} <назва_функції>`);
+      console.log('💡 Введіть "feature-help" для списку доступних функцій');
+      return;
+    }
+
+    const feature = args[0];
+    let result: string;
+
+    switch (command) {
+      case 'enable':
+        result = this.featureManager.enableFeature(feature as any);
+        break;
+      case 'disable':
+        result = this.featureManager.disableFeature(feature as any);
+        break;
+      case 'toggle':
+        result = this.featureManager.toggleFeature(feature as any);
+        break;
+      default:
+        console.log(`❌ Невідома команда: ${command}`);
+        return;
+    }
+
+    console.log(result);
+  }
+
   // Реалізація команд
   private showHelp(): void {
     console.log('\n📋 Доступні команди:');
-    console.log('='.repeat(50));
+    console.log('='.repeat(80));
     
-    this.commands.forEach(command => {
-      console.log(`  ${command.name.padEnd(15)} - ${command.description}`);
-    });
+    // Отримуємо статус функцій
+    const features = this.featureManager.getAllFeatures();
+    const featureEntries = Object.entries(features);
+    let featureIndex = 0;
+    
+    const commands = Array.from(this.commands.values());
+    const maxLines = Math.max(commands.length, featureEntries.length);
+    
+    for (let i = 0; i < maxLines; i++) {
+      let line = '';
+      
+      // Ліва сторона - команди
+      if (i < commands.length) {
+        const command = commands[i];
+        line += `  ${command.name.padEnd(15)} - ${command.description.padEnd(40)}`;
+      } else {
+        line += ' '.repeat(58);
+      }
+      
+      // Права сторона - статус функцій
+      if (i < featureEntries.length) {
+        const [name, enabled] = featureEntries[i];
+        const emoji = enabled ? '✅' : '🔴';
+        const status = enabled ? 'ON ' : 'OFF';
+        line += ` │ ${emoji} ${name.padEnd(12)} ${status}`;
+      }
+      
+      console.log(line);
+    }
+    
+    console.log('='.repeat(80));
+    console.log('\n🎛️  Управління функціями:');
+    console.log('  enable <функція>    - увімкнути функцію');
+    console.log('  disable <функція>   - вимкнути функцію'); 
+    console.log('  toggle <функція>    - перемкнути функцію');
+    console.log('  status              - показати статус всіх функцій');
+    console.log('  feature-help        - довідка по функціях');
     
     console.log('\n💡 Приклади використання:');
     console.log('  npm run dev -- --cli --stats     # Запустити з показом статистики');
-    console.log('  npm run dev -- --cli --config    # Запустити з показом конфігурації');
+    console.log('  npm run dev -- --cli --config    # Запустити з показом конфігурації'); 
     console.log('  npm run dev -- --cli --test-mode # Запустити в тестовому режимі');
+    console.log('  enable powerWords                # Увімкнути реакції на потужні слова');
+    console.log('  disable moderation               # Вимкнути модерацію');
+    console.log('  chat                             # Запустити інтерактивний чат');
   }
 
   private showConfig(): void {
@@ -434,9 +522,240 @@ export class CLIHandler {
     }
   }
 
+  private testPowerWordsDetector(): void {
+    console.log('\n⚡ Тестування детектора потужних слів:');
+    console.log('='.repeat(50));
+
+    const testPhrases = [
+      'Потужно працюю сьогодні!',
+      'Супер результат, дуже круто',
+      'Могутній успіх в проекті',
+      'Офігенний день сьогодні',
+      'Топ робота, класний результат',
+      'Мега крутий алгоритм',
+      'Звичайний день на роботі',
+      'Привіт, як справи?',
+      'бомбезний фідбек від клієнта',
+      'неймовірний прогрес в розвитку'
+    ];
+
+    try {
+      const { PotuzhnoPowerWordsDetector } = require('../domain/potuzhnoPowerWordsDetector');
+      const detector = new PotuzhnoPowerWordsDetector();
+
+      testPhrases.forEach(phrase => {
+        const matches = detector.detectPowerWords(phrase);
+        const bestMatch = detector.getBestPowerWordMatch(phrase);
+        
+        if (bestMatch) {
+          const emoji = detector.getReactionEmoji(bestMatch);
+          const motivation = detector.getMotivationalResponse(bestMatch);
+          console.log(`  ⚡ "${phrase}"`);
+          console.log(`    Знайдено: "${bestMatch.originalWord}" → "${bestMatch.matchedWord}"`);
+          console.log(`    Впевненість: ${(bestMatch.confidence * 100).toFixed(1)}%`);
+          console.log(`    Категорія: ${bestMatch.category}, Інтенсивність: ${bestMatch.intensity}`);
+          console.log(`    Реакція: ${emoji}`);
+          console.log(`    Мотивація: ${motivation}`);
+        } else {
+          console.log(`  ❌ "${phrase}" - не виявлено потужних слів`);
+        }
+        console.log('');
+      });
+    } catch (error) {
+      console.error('❌ Помилка тестування детектора потужних слів:', error);
+    }
+  }
+
   private exit(): void {
-    console.log('\n👋 Вихід з CLI режиму...');
+    console.log('\n👋 До побачення!');
     process.exit(0);
+  }
+
+  // Методи управління функціями
+  private enableFeature(): void {
+    console.log('💡 Використання: enable <назва_функції>');
+    console.log('💡 Введіть "feature-help" для списку доступних функцій');
+  }
+
+  private disableFeature(): void {
+    console.log('💡 Використання: disable <назва_функції>');
+    console.log('💡 Введіть "feature-help" для списку доступних функцій');
+  }
+
+  private toggleFeature(): void {
+    console.log('💡 Використання: toggle <назва_функції>');
+    console.log('💡 Введіть "feature-help" для списку доступних функцій');
+  }
+
+  private showFeatureStatus(): void {
+    console.log(this.featureManager.getFeatureStatus());
+  }
+
+  private enableAllFeatures(): void {
+    const result = this.featureManager.enableAll();
+    console.log(result);
+  }
+
+  private disableAllFeatures(): void {
+    const result = this.featureManager.disableAll();
+    console.log(result);
+  }
+
+  private resetFeatures(): void {
+    const result = this.featureManager.resetToDefaults();
+    console.log(result);
+  }
+
+  private showFeatureHelp(): void {
+    console.log(this.featureManager.getFeatureHelp());
+  }
+
+  private async startInteractiveChat(): Promise<void> {
+    console.log('\n💬 Інтерактивний чат із ботом');
+    console.log('='.repeat(50));
+    console.log('🎯 Емуляція групового чату - пишіть як у Telegram!');
+    console.log('💡 Спеціальні команди:');
+    console.log('  /quit або /exit  - вийти з чату');
+    console.log('  /stats          - показати статистику');
+    console.log('  /reset          - скинути контекст');
+    console.log('  @bot [текст]    - пряме звернення до бота');
+    console.log('📝 Починайте писати свої повідомлення:\n');
+
+    if (!this.messageHandler) {
+      console.log('❌ Message handler не ініціалізовано');
+      return;
+    }
+
+    const readline = require('readline');
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      prompt: '👤 Ви: '
+    });
+
+    let messageId = 1;
+    const chatId = 'test_group_chat';
+    const userId = 'test_user_123';
+    const userName = 'TestUser';
+
+    rl.prompt();
+
+    rl.on('line', async (input: string) => {
+      const message = input.trim();
+      
+      if (!message) {
+        rl.prompt();
+        return;
+      }
+
+      // Спеціальні команди
+      if (message === '/quit' || message === '/exit') {
+        console.log('👋 Вихід з чату...');
+        rl.close();
+        return;
+      }
+
+      if (message === '/stats') {
+        await this.showQuickStats();
+        rl.prompt();
+        return;
+      }
+
+      if (message === '/reset') {
+        console.log('🔄 Контекст чату скинуто');
+        rl.prompt();
+        return;
+      }
+
+      // Обробляємо повідомлення ботом
+      try {
+        console.log(`\n📩 [${new Date().toLocaleTimeString()}] Обробка повідомлення...`);
+        
+        const context = {
+          text: message,
+          userId: userId,
+          chatId: chatId,
+          userName: userName,
+          chatType: 'group' as const,
+          isGroupChat: true,
+          messageId: messageId++,
+          isReplyToBot: false,
+          mentionsBot: message.toLowerCase().includes('@bot'),
+          isDirectMention: message.toLowerCase().includes('@bot'),
+          requestsMeme: message.toLowerCase().includes('мем') || message.toLowerCase().includes('meme'),
+          memeRequest: (message.toLowerCase().includes('мем') || message.toLowerCase().includes('meme')) ? message : undefined
+        };
+
+                  const response = await this.messageHandler?.handleMessage(context);
+
+          if (!response) {
+            console.log('❌ Не отримано відповідь від бота');
+            console.log(''); // порожній рядок для відступу
+            rl.prompt();
+            return;
+          }
+
+        if (response.shouldReply || response.shouldReact) {
+          if (response.shouldReact && response.reaction) {
+            console.log(`🤖 Бот реагує: ${response.reaction}`);
+          }
+          
+          if (response.shouldReply && response.reply) {
+            console.log(`🤖 Бот [${response.responseType}]: ${response.reply}`);
+          }
+          
+          if (response.confidence !== undefined) {
+            console.log(`   Впевненість: ${(response.confidence * 100).toFixed(1)}%`);
+          }
+
+          if (response.memoryResponse) {
+            console.log(`   💭 Пам'ять: ${response.memoryResponse.message}`);
+          }
+
+          if (response.inappropriateContentWarning) {
+            console.log(`   ⚠️ Модерація: ${response.inappropriateContentWarning}`);
+          }
+          
+          if (response.powerWordReaction) {
+            console.log(`   ⚡ Потужне слово: ${response.powerWordReaction.emoji}`);
+          }
+          
+          if (response.memeResponse) {
+            console.log(`   🎭 Мем: ${response.memeResponse.type} - ${response.memeResponse.content}`);
+          }
+        } else {
+          console.log('🤖 [мовчить - не реагує на це повідомлення]');
+          if (response.reasoning) {
+            console.log(`   Причина: ${response.reasoning}`);
+          }
+        }
+
+      } catch (error) {
+        console.error('❌ Помилка обробки повідомлення:', error);
+      }
+
+      console.log(''); // порожній рядок для відступу
+      rl.prompt();
+    });
+
+    rl.on('close', () => {
+      console.log('\n👋 Чат завершено!');
+    });
+  }
+
+  private async showQuickStats(): Promise<void> {
+    if (!this.messageHandler) return;
+    
+    try {
+      const stats = this.messageHandler.getEnhancedStats();
+      console.log('\n📊 Швидка статистика:');
+      console.log(`   💬 NLP взаємодії: ${stats.nlp.totalInteractions}`);
+      console.log(`   🇺🇦 Українські користувачі: ${stats.nlp.ukrainianUsers}`);
+      console.log(`   🇬🇧 Англійські користувачі: ${stats.nlp.englishUsers}`);
+      console.log(`   🎭 Меми доступно: ${stats.memes.availableTemplates}`);
+    } catch (error) {
+      console.log('❌ Помилка отримання статистики');
+    }
   }
 }
 

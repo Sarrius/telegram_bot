@@ -1,4 +1,4 @@
-const { EnhancedMessageHandler } = require('./dist/usecases/enhancedMessageHandler');
+const { EnhancedMessageHandler } = require('../../dist/usecases/enhancedMessageHandler');
 
 async function testBotBehavior() {
   console.log('🤖 Testing Enhanced Ukrainian Telegram Bot Behavior\n');
