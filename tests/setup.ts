@@ -58,4 +58,21 @@ expect.extend({
   },
 });
 
-export {}; 
+export {};
+
+// Jest setup file - runs before all tests
+import { FeatureManager } from '../src/config/featureManager';
+
+// Enable all features for testing
+beforeAll(() => {
+  const featureManager = FeatureManager.getInstance();
+  featureManager.setTestConfiguration();
+  console.log('🧪 Test setup: All features enabled for testing');
+});
+
+// Reset to defaults after all tests
+afterAll(() => {
+  const featureManager = FeatureManager.getInstance();
+  featureManager.resetToDefaults();
+  console.log('🔄 Test cleanup: Features reset to defaults');
+}); 
