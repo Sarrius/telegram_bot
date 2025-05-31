@@ -71,7 +71,15 @@ export class NewsCommandsFuzzyMatcher {
     { word: 'херсон', variations: ['херсону', 'херсони', 'херсоне'] },
     { word: 'полтава', variations: ['полтаву', 'полтави', 'полтаві'] },
     { word: 'чернігів', variations: ['чернигов', 'чернігову', 'чернігови'] },
-    { word: 'черкаси', variations: ['черкасы', 'черкасах', 'черкас'] }
+    { word: 'черкаси', variations: ['черкасы', 'черкасах', 'черкас'] },
+    { word: 'тернопіль', variations: ['тернополь', 'тернопыль', 'тернопілю', 'тернополю', 'тернопыль'] },
+    { word: 'івано-франківськ', variations: ['ивано-франковск', 'івано-франків', 'івано-франківська'] },
+    { word: 'житомир', variations: ['житомыр', 'житомиру', 'житомырі', 'житомири'] },
+    { word: 'хмельницький', variations: ['хмельницкий', 'хмельницького', 'хмельницьку'] },
+    { word: 'рівне', variations: ['ровно', 'рівню', 'рівно', 'рівном'] },
+    { word: 'чернівці', variations: ['черновцы', 'чернівці', 'чернівцях', 'чернвці'] },
+    { word: 'суми', variations: ['сумы', 'сум', 'сумах', 'сумами'] },
+    { word: 'кропивницький', variations: ['кропивницкий', 'кировоград', 'кроп']}
   ];
 
   /**
@@ -288,9 +296,9 @@ export class NewsCommandsFuzzyMatcher {
 
       // Fuzzy matching тільки якщо ще не знайшли хороший збіг
       if (bestConfidence < 0.9) {
-              // Fuzzy matching для основного слова
-      if (keyword.word.length >= 4) { // Тільки для довших слів
-        const fuzzyMatch = this.fuzzyMatch(text, keyword.word);
+        // Fuzzy matching для основного слова
+        if (keyword.word.length >= 4) { // Тільки для довших слів
+          const fuzzyMatch = this.fuzzyMatch(text, keyword.word);
         // Спеціальне підвищення для підписки при наявності "підпіска"
         let adjustedConfidence = fuzzyMatch.confidence;
         if (type === 'subscribe' && keyword.word === 'підписка' && text.includes('підпіска')) {
@@ -298,15 +306,15 @@ export class NewsCommandsFuzzyMatcher {
         }
         
         if (adjustedConfidence > bestConfidence && adjustedConfidence >= 0.8) { // Підвищений поріг
-          bestMatch = {
-            type,
+            bestMatch = {
+              type,
             confidence: adjustedConfidence,
-            originalText: text,
-            matchedKeyword: keyword.word
-          };
+              originalText: text,
+              matchedKeyword: keyword.word
+            };
           bestConfidence = adjustedConfidence;
+          }
         }
-      }
 
         // Fuzzy matching для варіацій тільки якщо потрібно
         if (bestConfidence < 0.85) {

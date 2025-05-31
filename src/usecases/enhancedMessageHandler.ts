@@ -8,6 +8,9 @@ import { PotuzhnoPowerWordsDetector, PowerWordMatch } from '../domain/potuzhnoPo
 import { ModerationHandler, ModerationResponse, ModerationConfig } from './moderationHandler';
 import { UserMemory, MemoryResponse } from '../domain/userMemory';
 import { analyzeMessage } from '../domain/messageAnalyzer';
+import { FeatureManager } from '../config/featureManager';
+import { KnowledgeSearchHandler, KnowledgeSearchResponse } from './knowledgeSearchHandler';
+import { CLICommandHandler, CLICommandResponse } from './cliCommandHandler';
 
 export interface EnhancedMessageContext extends MessageContext {
   isDirectMention?: boolean;
@@ -47,7 +50,17 @@ export interface EnhancedBotResponse extends BotResponse {
     match: PowerWordMatch;
     motivationalResponse?: string;
   };
-  responseType: 'reaction' | 'reply' | 'conversation' | 'content_warning' | 'moderation' | 'meme' | 'atmosphere' | 'power_word' | 'memory' | 'none';
+  knowledgeResponse?: {
+    answer: string;
+    source: string;
+    confidence: number;
+  };
+  cliResponse?: {
+    command: string;
+    args: string[];
+    response: string;
+  };
+  responseType: 'reaction' | 'reply' | 'conversation' | 'content_warning' | 'moderation' | 'meme' | 'atmosphere' | 'power_word' | 'memory' | 'knowledge' | 'cli' | 'none';
 }
 
 export class EnhancedMessageHandler {
@@ -60,6 +73,9 @@ export class EnhancedMessageHandler {
   private powerWordsDetector: PotuzhnoPowerWordsDetector;
   private moderationHandler: ModerationHandler;
   private userMemory: UserMemory;
+  private featureManager: FeatureManager;
+  private knowledgeSearchHandler: KnowledgeSearchHandler;
+  private cliCommandHandler: CLICommandHandler;
   
   private engagementCheckInterval: NodeJS.Timeout | null = null;
   private chatEngagementCallbacks: Map<string, (action: any) => void> = new Map();
@@ -84,6 +100,9 @@ export class EnhancedMessageHandler {
     this.powerWordsDetector = new PotuzhnoPowerWordsDetector();
     this.moderationHandler = new ModerationHandler(moderationConfig);
     this.userMemory = new UserMemory();
+    this.featureManager = FeatureManager.getInstance();
+    this.knowledgeSearchHandler = new KnowledgeSearchHandler();
+    this.cliCommandHandler = new CLICommandHandler();
 
     console.log('🇺🇦 Enhanced Ukrainian Telegram Bot Handler initialized with memory system');
     // Start periodic atmosphere engagement checks
@@ -144,6 +163,7 @@ export class EnhancedMessageHandler {
       }
 
       // Step 1: Check for profanity/inappropriate language (high priority)
+      if (this.featureManager.isEnabled('moderation') || this.featureManager.isEnabled('profanityFilter')) {
       const moderationAnalysis = this.moderationHandler.analyzeMessage(
         context.text,
         context.chatType || 'group',
@@ -167,6 +187,7 @@ export class EnhancedMessageHandler {
           },
           responseType: 'moderation'
         };
+        }
       }
 
       // Step 2: Check for other inappropriate content 
@@ -218,7 +239,60 @@ export class EnhancedMessageHandler {
         }
       }
 
+      // Step 3.1: Check for CLI commands (help, status, feature management)
+      const cliResponse = this.cliCommandHandler.handleMessage(
+        context.text,
+        context.chatType || 'group',
+        context.userId,
+        context.chatId
+      );
+
+      if (cliResponse.shouldRespond) {
+        console.log(`🎛️ CLI command executed: ${cliResponse.command || 'unknown'} (${Math.round(cliResponse.confidence * 100)}%)`);
+        return {
+          ...this.createBaseResponse(),
+          shouldReply: true,
+          reply: cliResponse.response,
+          confidence: cliResponse.confidence,
+          reasoning: cliResponse.reasoning,
+          cliResponse: {
+            command: cliResponse.command || '',
+            args: cliResponse.args || [],
+            response: cliResponse.response
+          },
+          responseType: 'cli'
+        };
+      }
+
+      // Step 3.5: Check for knowledge search queries (questions, math, facts)
+      if (this.featureManager.isEnabled('knowledgeSearch')) {
+        const knowledgeResponse = await this.knowledgeSearchHandler.handleMessage(
+          context.text,
+          context.chatType || 'group',
+          context.userId,
+          context.chatId
+        );
+
+        if (knowledgeResponse.shouldRespond) {
+          console.log(`🔍 Knowledge search successful: "${knowledgeResponse.response.substring(0, 50)}..." (${Math.round(knowledgeResponse.confidence * 100)}%)`);
+          return {
+            ...this.createBaseResponse(),
+            shouldReply: true,
+            reply: knowledgeResponse.response,
+            confidence: knowledgeResponse.confidence,
+            reasoning: knowledgeResponse.reasoning,
+            knowledgeResponse: {
+              answer: knowledgeResponse.response,
+              source: knowledgeResponse.source || 'Knowledge Search',
+              confidence: knowledgeResponse.confidence
+            },
+            responseType: 'knowledge'
+          };
+        }
+      }
+
       // Step 4: Check for power words ("потужно" синоніми) with typo tolerance
+      if (this.featureManager.isEnabled('powerWords')) {
       const powerWordMatch = this.powerWordsDetector.getBestPowerWordMatch(context.text);
       if (powerWordMatch) {
         console.log(`⚡ Power word detected: "${powerWordMatch.originalWord}" -> "${powerWordMatch.matchedWord}" (${(powerWordMatch.confidence * 100).toFixed(1)}%)`);
@@ -230,10 +304,9 @@ export class EnhancedMessageHandler {
           ...this.createBaseResponse(),
           shouldReact: true,
           reaction: emoji,
-          shouldReply: Math.random() < 0.3, // 30% шанс додатково відповісти
-          reply: Math.random() < 0.3 ? motivationalResponse : undefined,
+            shouldReply: false, // Тільки реакція, без текстової відповіді
           confidence: powerWordMatch.confidence,
-          reasoning: `Power word detected: ${powerWordMatch.originalWord} -> ${powerWordMatch.matchedWord}`,
+            reasoning: `Power word detected: ${powerWordMatch.originalWord} -> ${powerWordMatch.matchedWord} (reaction only)`,
           powerWordReaction: {
             emoji,
             match: powerWordMatch,
@@ -241,6 +314,7 @@ export class EnhancedMessageHandler {
           },
           responseType: 'power_word'
         };
+        }
       }
 
       // Step 5: Check for direct conversation requests (mentions, replies, help requests)

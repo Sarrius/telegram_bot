@@ -1,4 +1,4 @@
-const { ModerationHandler } = require('./dist/usecases/moderationHandler');
+const { ModerationHandler } = require('../../dist/usecases/moderationHandler');
 
 console.log('🔴 Тестування системи модерації нецензурної лексики');
 console.log('=' .repeat(60));

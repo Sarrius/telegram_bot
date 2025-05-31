@@ -202,14 +202,14 @@ export class NewsWeatherHandler {
    */
   async handleNewsCommand(chatId: number, messageText: string): Promise<string> {
     try {
-      // Використовуємо fuzzy matching для розпізнавання команд
-      const commandMatch = this.fuzzyMatcher.recognizeCommand(messageText);
-      
-      if (!commandMatch) {
-        return '';
-      }
+    // Використовуємо fuzzy matching для розпізнавання команд
+    const commandMatch = this.fuzzyMatcher.recognizeCommand(messageText);
+    
+    if (!commandMatch) {
+      return '';
+    }
 
-      console.log(`Розпізнано команду: ${commandMatch.type} (впевненість: ${commandMatch.confidence})`);
+    console.log(`Розпізнано команду: ${commandMatch.type} (впевненість: ${commandMatch.confidence})`);
 
       switch (commandMatch.type) {
         case 'news':
@@ -235,7 +235,7 @@ export class NewsWeatherHandler {
   }
 
   /**
-   * Отримує новини на вимогу
+   * Отримує новини на вимогу з фокусом на критичні події
    */
   private async getNewsOnDemand(): Promise<string> {
     try {
@@ -245,22 +245,63 @@ export class NewsWeatherHandler {
         return '📰 Наразі немає свіжих новин за останню добу.';
       }
 
-      const topNews = news
-        .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
-        .slice(0, 7);
-
-      let message = `📰 **Останні новини України:**\n\n`;
-      
-      topNews.forEach((item, index) => {
-        const emoji = this.getSeverityEmoji(item.severity);
-        message += `${emoji} **${item.title}**\n`;
-        if (item.description) {
-          message += `${item.description.substring(0, 120)}${item.description.length > 120 ? '...' : ''}\n`;
+      // Сортуємо новини за важливістю: спочатку критичні, потім за часом
+      const sortedNews = news.sort((a, b) => {
+        // Пріоритет критичності
+        const severityOrder: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+        const severityDiff = severityOrder[b.severity] - severityOrder[a.severity];
+        
+        if (severityDiff !== 0) {
+          return severityDiff;
         }
-        message += `🔗 [Читати](${item.url})\n\n`;
+        
+        // При однаковій критичності - сортуємо за часом
+        return b.publishedAt.getTime() - a.publishedAt.getTime();
       });
 
-      message += `🕐 Оновлено: ${new Date().toLocaleString('uk-UA')}`;
+      // Окремо виділяємо критичні новини
+      const criticalNews = sortedNews.filter(item => item.severity === 'critical');
+      const otherNews = sortedNews.filter(item => item.severity !== 'critical').slice(0, 5);
+
+      let message = '';
+
+      // Спочатку показуємо критичні новини з акцентом
+      if (criticalNews.length > 0) {
+        message += `🚨 **КРИТИЧНІ НОВИНИ:**\n\n`;
+      
+        criticalNews.forEach((item, index) => {
+          message += `🚨 **${item.title}**\n`;
+        if (item.description) {
+            message += `${item.description}\n`;
+          }
+          message += `🔗 [ЧИТАТИ ПОВНІСТЮ](${item.url})\n`;
+          message += `📍 Джерело: ${item.source}\n`;
+          message += `🕐 ${item.publishedAt.toLocaleString('uk-UA')}\n\n`;
+        });
+        
+        message += `${'─'.repeat(40)}\n\n`;
+      }
+
+      // Потім показуємо інші важливі новини
+      if (otherNews.length > 0) {
+        message += `📰 **ВАЖЛИВІ НОВИНИ:**\n\n`;
+        
+        otherNews.forEach((item, index) => {
+          const emoji = this.getSeverityEmoji(item.severity);
+          message += `${emoji} **${item.title}**\n`;
+          message += `🔗 [Читати](${item.url})\n`;
+          message += `🕐 ${item.publishedAt.toLocaleString('uk-UA', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          })}\n\n`;
+      });
+      }
+
+      if (criticalNews.length === 0 && otherNews.length === 0) {
+        return '📰 Наразі немає важливих новин за останню добу.';
+      }
+
+      message += `🔄 Оновлено: ${new Date().toLocaleString('uk-UA')}`;
       
       return message;
     } catch (error) {

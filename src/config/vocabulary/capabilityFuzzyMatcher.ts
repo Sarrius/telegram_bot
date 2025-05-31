@@ -152,11 +152,11 @@ export class CapabilityFuzzyMatcher {
       'хто', 'who', 'скілзи', 'навички', 'мануал', 'опиши', 'себе', 'you', 'are'
     ];
     
-          // Якщо містить базові слова можливостей - це вже достатньо
+    // Якщо містить базові слова можливостей - це вже достатньо
       const capabilityWords = ['можливості', 'функції', 'команди', 'capabilities', 'features', 'help', 'скілзи', 'навички', 'commands'];
-      if (capabilityWords.some(word => text.includes(word))) {
-        return true;
-      }
+    if (capabilityWords.some(word => text.includes(word))) {
+      return true;
+    }
     
     // Якщо знайшли збіг з високою впевненістю, ймовірно це валідний capability request
     return validContextWords.some(word => text.includes(word));

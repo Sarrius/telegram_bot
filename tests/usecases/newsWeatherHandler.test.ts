@@ -117,7 +117,7 @@ describe('NewsWeatherHandler', () => {
 
           const response = await handler.handleNewsCommand(123, request);
 
-          expect(response).toContain('📰 **Останні новини України:**');
+          expect(response).toContain('📰 **ВАЖЛИВІ НОВИНИ:**');
           expect(response).toContain('Тестова новина');
           expect(mockMonitor.getUkrainianNews).toHaveBeenCalledWith(24);
         });
@@ -294,7 +294,7 @@ describe('NewsWeatherHandler', () => {
         matchedKeyword: 'підписатися'
       });
       await handler.handleNewsCommand(2001, 'підписатися');
-      
+
       // Перевіряємо що чат підписаний
       const subscribedChats = handler.getSubscribedChats();
       expect(subscribedChats).toContain(2001);
@@ -317,7 +317,7 @@ describe('NewsWeatherHandler', () => {
         matchedKeyword: 'підписатися'
       });
       await handler.handleNewsCommand(3001, 'підписатися');
-      
+
       // Перевіряємо що моніторинг увімкнено
       const status = handler.getSchedulerStatus();
       expect(status).toContain('critical_monitoring');
@@ -492,7 +492,7 @@ describe('NewsWeatherHandler', () => {
         mockMonitor.getUkrainianNews.mockResolvedValueOnce(mockNews);
 
         const response = await handler.handleNewsCommand(5100 + index, command);
-        expect(response).toContain('📰 **Останні новини України:**');
+        expect(response).toContain('📰 **ВАЖЛИВІ НОВИНИ:**');
       });
     });
 
