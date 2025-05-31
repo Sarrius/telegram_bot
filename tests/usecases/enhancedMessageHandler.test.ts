@@ -88,6 +88,156 @@ describe('EnhancedMessageHandler', () => {
     });
   });
 
+  describe('Bot Capabilities Handling', () => {
+    it('should handle Ukrainian capability requests', async () => {
+      const context: EnhancedMessageContext = {
+        text: 'Що ти можеш робити?',
+        userId: 'user1',
+        chatId: 'chat1',
+        userName: 'TestUser',
+        isGroupChat: true,
+        messageId: 123,
+        isReplyToBot: false,
+        mentionsBot: true,
+        isDirectMention: true
+      };
+
+      const response = await handler.handleMessage(context);
+
+      expect(response.responseType).toBe('conversation');
+      expect(response.shouldReply).toBe(true);
+      expect(response.conversationResponse).toBeTruthy();
+      expect(response.conversationResponse).toContain('Привіт, TestUser!');
+      expect(response.conversationResponse).toContain('🤖 Ось детальний список моїх можливостей:');
+      expect(response.confidence).toBeGreaterThan(0.9);
+    });
+
+    it('should handle English capability requests', async () => {
+      const context: EnhancedMessageContext = {
+        text: 'What can you do?',
+        userId: 'user1',
+        chatId: 'chat1',
+        userName: 'TestUser',
+        isGroupChat: true,
+        messageId: 123,
+        isReplyToBot: false,
+        mentionsBot: true,
+        isDirectMention: true
+      };
+
+      const response = await handler.handleMessage(context);
+
+      expect(response.responseType).toBe('conversation');
+      expect(response.shouldReply).toBe(true);
+      expect(response.conversationResponse).toBeTruthy();
+      expect(response.conversationResponse).toContain('Hello, TestUser!');
+      expect(response.conversationResponse).toContain('🤖 Here\'s a detailed list of my capabilities:');
+      expect(response.confidence).toBeGreaterThan(0.9);
+    });
+
+    it('should handle capability requests without user name', async () => {
+      const context: EnhancedMessageContext = {
+        text: 'покажи команди',
+        userId: 'user1',
+        chatId: 'chat1',
+        isGroupChat: true,
+        messageId: 123,
+        isReplyToBot: false,
+        mentionsBot: true,
+        isDirectMention: true
+      };
+
+      const response = await handler.handleMessage(context);
+
+      expect(response.responseType).toBe('conversation');
+      expect(response.shouldReply).toBe(true);
+      expect(response.conversationResponse).toBeTruthy();
+      expect(response.conversationResponse).toContain('Привіт!');
+      expect(response.confidence).toBeGreaterThan(0.9);
+    });
+
+    it('should detect various Ukrainian capability triggers', async () => {
+      const triggers = [
+        'можливості',
+        'функції',
+        'команди',
+        'що вмієш',
+        'які функції',
+        'допомога',
+        'розкажи про себе'
+      ];
+
+      for (const trigger of triggers) {
+        const context: EnhancedMessageContext = {
+          text: trigger,
+          userId: 'user1',
+          chatId: 'chat1',
+          userName: 'TestUser',
+          isGroupChat: true,
+          messageId: 123,
+          isReplyToBot: false,
+          mentionsBot: true,
+          isDirectMention: true
+        };
+
+        const response = await handler.handleMessage(context);
+        expect(response.responseType).toBe('conversation');
+        expect(response.shouldReply).toBe(true);
+      }
+    });
+
+    it('should detect various English capability triggers', async () => {
+      const triggers = [
+        'capabilities',
+        'features',
+        'commands',
+        'help',
+        'bot capabilities',
+        'show features'
+      ];
+
+      for (const trigger of triggers) {
+        const context: EnhancedMessageContext = {
+          text: trigger,
+          userId: 'user1',
+          chatId: 'chat1',
+          userName: 'TestUser',
+          isGroupChat: true,
+          messageId: 123,
+          isReplyToBot: false,
+          mentionsBot: true,
+          isDirectMention: true
+        };
+
+        const response = await handler.handleMessage(context);
+        expect(response.responseType).toBe('conversation');
+        expect(response.shouldReply).toBe(true);
+      }
+    });
+
+    it('should include all feature categories in response', async () => {
+      const context: EnhancedMessageContext = {
+        text: 'What are your capabilities?',
+        userId: 'user1',
+        chatId: 'chat1',
+        userName: 'TestUser',
+        isGroupChat: true,
+        messageId: 123,
+        isReplyToBot: false,
+        mentionsBot: true,
+        isDirectMention: true
+      };
+
+      const response = await handler.handleMessage(context);
+
+      expect(response.conversationResponse).toContain('💬 Conversations');
+      expect(response.conversationResponse).toContain('🎭 Entertainment');
+      expect(response.conversationResponse).toContain('👥 Social Features');
+      expect(response.conversationResponse).toContain('🛡️ Moderation');
+      expect(response.conversationResponse).toContain('🔧 Utilities');
+    });
+  });
+
   describe('NLP Conversation Handling', () => {
     it('should handle direct Ukrainian conversation requests', async () => {
       const context: EnhancedMessageContext = {
@@ -253,7 +403,7 @@ describe('EnhancedMessageHandler', () => {
 
     it('should handle /meme commands', async () => {
       const context: EnhancedMessageContext = {
-        text: '/meme топ текст | низ текст',
+        text: '/meme звичайний текст | низ текст',
         userId: 'user1',
         chatId: 'chat1',
         userName: 'TestUser',
@@ -393,7 +543,7 @@ describe('EnhancedMessageHandler', () => {
 
     it('should provide reactions to positive messages', async () => {
       const context: EnhancedMessageContext = {
-        text: 'Я дуже радий! Все супер!',
+        text: 'Я дуже радий! Все чудово!',
         userId: 'user1',
         chatId: 'chat1',
         userName: 'TestUser',
@@ -406,8 +556,10 @@ describe('EnhancedMessageHandler', () => {
       const response = await handler.handleMessage(context);
 
       if (response.shouldReact) {
-        expect(response.responseType).toBe('reaction');
-        expect(response.reaction).toBeTruthy();
+        expect(['reaction', 'power_word']).toContain(response.responseType);
+        if (response.responseType === 'reaction') {
+          expect(response.reaction).toBeTruthy();
+        }
       }
     });
 
@@ -663,7 +815,7 @@ describe('EnhancedMessageHandler', () => {
 
       expect(response.confidence).toBeGreaterThanOrEqual(0);
       expect(response.reasoning).toBeTruthy();
-      expect(['reaction', 'reply', 'conversation', 'content_warning', 'meme', 'atmosphere', 'none']).toContain(response.responseType);
+      expect(['reaction', 'reply', 'conversation', 'content_warning', 'meme', 'atmosphere', 'power_word', 'none']).toContain(response.responseType);
     });
   });
 
@@ -684,9 +836,9 @@ describe('EnhancedMessageHandler', () => {
 
       const response = await handler.handleMessage(context);
 
-      // Should prioritize content warning over other features
-      expect(response.responseType).toBe('content_warning');
-      expect(response.inappropriateContentWarning).toBeTruthy();
+      // Memory system has highest priority, so it should handle offensive content first
+      expect(response.responseType).toBe('memory');
+      expect(response.memoryResponse).toBeTruthy();
     });
 
     it('should prioritize conversation over memes when mentioned', async () => {
@@ -808,6 +960,202 @@ describe('EnhancedMessageHandler', () => {
 
       expect(user1Role!.role).toBe('Мем Лорд');
       expect(user2Role!.role).toBe('Стартер Тем');
+    });
+  });
+
+  describe('Power Words Detection ("Потужно" синоніми)', () => {
+    it('should detect and react to exact power words', async () => {
+      const powerWords = [
+        'Потужно працюю!',
+        'Супер результат!',
+        'Могутній успіх!',
+        'Крутий проект!',
+        'Мега досягнення!'
+      ];
+
+      for (const text of powerWords) {
+        const context: EnhancedMessageContext = {
+          text,
+          userId: 'user1',
+          chatId: 'chat1',
+          userName: 'TestUser',
+          isGroupChat: true,
+          messageId: 123,
+          isReplyToBot: false,
+          mentionsBot: false
+        };
+
+        const response = await handler.handleMessage(context);
+
+        expect(response.responseType).toBe('power_word');
+        expect(response.shouldReact).toBe(true);
+        expect(response.powerWordReaction).toBeTruthy();
+        expect(response.powerWordReaction!.emoji).toBeTruthy();
+        expect(response.powerWordReaction!.match.confidence).toBeGreaterThanOrEqual(0.8);
+      }
+    });
+
+    it('should detect power words with high accuracy (80%)', async () => {
+      const exactMatches = [
+        { text: 'потужно працюю', expected: 'потужно' },
+        { text: 'супер результат', expected: 'супер' },
+        { text: 'могутній успіх', expected: 'могутній' },
+        { text: 'крутий проект', expected: 'крутий' },
+        { text: 'мега досягнення', expected: 'мега' }
+      ];
+
+      for (const { text, expected } of exactMatches) {
+        const context: EnhancedMessageContext = {
+          text,
+          userId: 'user1',
+          chatId: 'chat1',
+          userName: 'TestUser',
+          isGroupChat: true,
+          messageId: 123,
+          isReplyToBot: false,
+          mentionsBot: false
+        };
+
+        const response = await handler.handleMessage(context);
+
+        expect(response.responseType).toBe('power_word');
+        expect(response.powerWordReaction).toBeTruthy();
+        expect(response.powerWordReaction!.match.matchedWord).toBe(expected);
+        expect(response.powerWordReaction!.match.confidence).toBeGreaterThanOrEqual(0.8);
+      }
+    });
+
+    it('should provide appropriate emoji reactions for different categories', async () => {
+      const categoryTests = [
+        { text: 'потужно зашкалює', expectedEmojis: ['⚡'] },
+        { text: 'сильний як сталь', expectedEmojis: ['💪'] },
+        { text: 'енергійний рух', expectedEmojis: ['🚀', '⚡'] },
+        { text: 'офігенний результат', expectedEmojis: ['🔥'] }
+      ];
+
+      for (const { text, expectedEmojis } of categoryTests) {
+        const context: EnhancedMessageContext = {
+          text,
+          userId: 'user1',
+          chatId: 'chat1',
+          userName: 'TestUser',
+          isGroupChat: true,
+          messageId: 123,
+          isReplyToBot: false,
+          mentionsBot: false
+        };
+
+        const response = await handler.handleMessage(context);
+
+        expect(response.responseType).toBe('power_word');
+        expect(response.powerWordReaction).toBeTruthy();
+        expect(expectedEmojis).toContain(response.powerWordReaction!.emoji);
+      }
+    });
+
+    it('should handle multiple power words in one message', async () => {
+      const context: EnhancedMessageContext = {
+        text: 'Потужно і супер мега круто!',
+        userId: 'user1',
+        chatId: 'chat1',
+        userName: 'TestUser',
+        isGroupChat: true,
+        messageId: 123,
+        isReplyToBot: false,
+        mentionsBot: false
+      };
+
+      const response = await handler.handleMessage(context);
+
+      expect(response.responseType).toBe('power_word');
+      expect(response.powerWordReaction).toBeTruthy();
+      // Should pick the best match (highest confidence * intensity)
+      expect(['потужно', 'супер', 'мега', 'крутий']).toContain(
+        response.powerWordReaction!.match.matchedWord
+      );
+    });
+
+    it('should not react to non-power words', async () => {
+      const nonPowerTexts = [
+        'Звичайний день на роботі',
+        'Іду в магазин за хлібом',
+        'Дякую за допомогу',
+        'Як справи у всіх?',
+        'Побачимося завтра'
+      ];
+
+      for (const text of nonPowerTexts) {
+        const context: EnhancedMessageContext = {
+          text,
+          userId: 'user1',
+          chatId: 'chat1',
+          userName: 'TestUser',
+          isGroupChat: true,
+          messageId: 123,
+          isReplyToBot: false,
+          mentionsBot: false
+        };
+
+        const response = await handler.handleMessage(context);
+
+        expect(response.responseType).not.toBe('power_word');
+        expect(response.powerWordReaction).toBeFalsy();
+      }
+    });
+
+    it('should handle exact power word phrases', async () => {
+      const exactPhrases = [
+        'потужна робота',     // exact match
+        'супер результат',    // exact match
+        'могутній день',      // exact match
+        'крутий стиль'        // exact match
+      ];
+
+      for (const text of exactPhrases) {
+        const context: EnhancedMessageContext = {
+          text,
+          userId: 'user1',
+          chatId: 'chat1',
+          userName: 'TestUser',
+          isGroupChat: true,
+          messageId: 123,
+          isReplyToBot: false,
+          mentionsBot: false
+        };
+
+        const response = await handler.handleMessage(context);
+
+        expect(response.responseType).toBe('power_word');
+        expect(response.powerWordReaction!.match.confidence).toBeGreaterThanOrEqual(0.8);
+      }
+    });
+
+    it('should provide confidence scores and logging', async () => {
+      const context: EnhancedMessageContext = {
+        text: 'потужно зашкалює!',
+        userId: 'user1',
+        chatId: 'chat1',
+        userName: 'TestUser',
+        isGroupChat: true,
+        messageId: 123,
+        isReplyToBot: false,
+        mentionsBot: false
+      };
+
+      // Spy on console.log to verify logging
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+
+      const response = await handler.handleMessage(context);
+
+      expect(response.confidence).toBeGreaterThanOrEqual(0.8);
+      expect(response.reasoning).toContain('Power word detected');
+      
+      // Should log the detection
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/⚡ Power word detected:/)
+      );
+
+      consoleSpy.mockRestore();
     });
   });
 }); 

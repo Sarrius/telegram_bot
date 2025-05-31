@@ -45,9 +45,9 @@ export class FuzzyMatcher {
 
       const fuse = new Fuse(searchableItems, {
         keys: ['word'],
-        threshold: 0.4, // 60% similarity required
+        threshold: 0.2, // Підвищено з 0.4 до 0.2 - більш строгий збіг (80% similarity required)
         distance: 100,
-        minMatchCharLength: 2,
+        minMatchCharLength: 3, // Підвищено з 2 до 3 - довші слова для збігу
         includeScore: true,
         findAllMatches: false
       });
@@ -122,7 +122,7 @@ export class FuzzyMatcher {
   /**
    * Check if text contains words from specific categories
    */
-  findCategoriesInText(text: string, minConfidence: number = 0.6): Map<string, FuzzyMatchResult[]> {
+  findCategoriesInText(text: string, minConfidence: number = 0.85): Map<string, FuzzyMatchResult[]> {
     const words = this.extractWords(text);
     const categoriesFound = new Map<string, FuzzyMatchResult[]>();
 
@@ -150,7 +150,7 @@ export class FuzzyMatcher {
     matches: FuzzyMatchResult[];
     totalIntensity: number;
   } | null {
-    const categories = this.findCategoriesInText(text, 0.5);
+    const categories = this.findCategoriesInText(text, 0.85);
     
     if (categories.size === 0) return null;
 
@@ -173,7 +173,7 @@ export class FuzzyMatcher {
         sum + match.confidence, 0
       ) / matches.length;
       
-      const categoryScore = (matches.length * avgConfidence * totalIntensity) / matches.length;
+      const categoryScore = matches.length * avgConfidence * totalIntensity;
       
       if (categoryScore > bestScore) {
         bestScore = categoryScore;

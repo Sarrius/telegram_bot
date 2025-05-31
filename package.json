@@ -16,7 +16,14 @@
     "test:integration": "jest tests/integration/",
     "test:ci": "jest --ci --coverage --watchAll=false",
     "deploy:vercel": "vercel --prod",
-    "deploy:render": "echo 'Push to main branch to deploy on Render'"
+    "deploy:render": "echo 'Push to main branch to deploy on Render'",
+    "cli": "ts-node src/index.ts --cli",
+    "cli:stats": "ts-node src/index.ts --cli --stats",
+    "cli:config": "ts-node src/index.ts --cli --config",
+    "cli:test": "ts-node src/index.ts --cli --test-mode",
+    "cli:health": "ts-node src/index.ts --cli --health",
+    "cli:validate": "ts-node src/index.ts --cli --validate",
+    "cli:features": "ts-node src/index.ts --cli --features"
   },
   "dependencies": {
     "axios": "^1.6.7",
