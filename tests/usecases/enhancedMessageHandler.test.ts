@@ -123,7 +123,7 @@ describe('EnhancedMessageHandler', () => {
       expect(response.shouldReply).toBe(true);
       expect(response.conversationResponse).toBeTruthy();
       expect(response.conversationResponse).toContain('Привіт, TestUser!');
-      expect(response.conversationResponse).toContain('🤖 Ось детальний список моїх можливостей:');
+      expect(response.conversationResponse).toContain('🤖 **Що я вмію:**');
       expect(response.confidence).toBeGreaterThan(0.9);
     });
 
@@ -146,7 +146,7 @@ describe('EnhancedMessageHandler', () => {
       expect(response.shouldReply).toBe(true);
       expect(response.conversationResponse).toBeTruthy();
       expect(response.conversationResponse).toContain('Hello, TestUser!');
-      expect(response.conversationResponse).toContain('🤖 Here\'s a detailed list of my capabilities:');
+      expect(response.conversationResponse).toContain('🤖 **What I can do:**');
       expect(response.confidence).toBeGreaterThan(0.9);
     });
 
@@ -231,7 +231,7 @@ describe('EnhancedMessageHandler', () => {
 
     it('should include all feature categories in response', async () => {
       const context: EnhancedMessageContext = {
-        text: 'What are your capabilities?',
+        text: 'Що ти можеш?',
         userId: 'user1',
         chatId: 'chat1',
         userName: 'TestUser',
@@ -244,11 +244,11 @@ describe('EnhancedMessageHandler', () => {
 
       const response = await handler.handleMessage(context);
 
-      expect(response.conversationResponse).toContain('💬 Conversations');
-      expect(response.conversationResponse).toContain('🎭 Entertainment');
-      expect(response.conversationResponse).toContain('👥 Social Features');
-      expect(response.conversationResponse).toContain('🛡️ Moderation');
-      expect(response.conversationResponse).toContain('🔧 Utilities');
+      expect(response.conversationResponse).toContain('💬 **Спілкування**');
+      expect(response.conversationResponse).toContain('🎭 **Розваги**');
+      expect(response.conversationResponse).toContain('👥 **Соціальне**');
+      expect(response.conversationResponse).toContain('🛡️ **Модерація**');
+      expect(response.conversationResponse).toContain('🔧 **Корисне**');
     });
   });
 
@@ -429,8 +429,9 @@ describe('EnhancedMessageHandler', () => {
 
       const response = await handler.handleMessage(context);
 
-      expect(response.responseType).toBe('meme');
-      expect(response.memeResponse).toBeTruthy();
+      expect(response.responseType).toBe('cli');
+      expect(response.cliResponse).toBeTruthy();
+      expect(response.cliResponse!.response).toContain('мем');
     });
 
     it('should suggest contextual memes occasionally', async () => {
@@ -829,7 +830,7 @@ describe('EnhancedMessageHandler', () => {
 
       expect(response.confidence).toBeGreaterThanOrEqual(0);
       expect(response.reasoning).toBeTruthy();
-      expect(['reaction', 'reply', 'conversation', 'content_warning', 'meme', 'atmosphere', 'power_word', 'none']).toContain(response.responseType);
+      expect(['reaction', 'reply', 'conversation', 'content_warning', 'moderation', 'cli', 'currency', 'meme', 'atmosphere', 'power_word', 'memory', 'knowledge', 'none']).toContain(response.responseType);
     });
   });
 
@@ -1155,12 +1156,23 @@ describe('EnhancedMessageHandler', () => {
 
   describe('CLI Commands Handling', () => {
     it('should handle basic CLI help command', async () => {
-      const context = createTestContext('help');
+      const context: EnhancedMessageContext = {
+        text: 'cli help',
+        userId: 'user1',
+        chatId: 'chat1',
+        userName: 'TestUser',
+        isGroupChat: true,
+        messageId: 123,
+        isReplyToBot: false,
+        mentionsBot: false,
+        isDirectMention: false
+      };
+
       const response = await handler.handleMessage(context);
-      
+
       expect(response.responseType).toBe('cli');
       expect(response.shouldReply).toBe(true);
-      expect(response.reply).toContain('Available Bot Commands');
+      expect(response.reply).toContain('CLI Commands');
       expect(response.cliResponse?.command).toBe('help');
     });
 
