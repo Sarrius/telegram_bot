@@ -93,6 +93,7 @@ export interface AppConfig {
     profanityFilter: boolean;
     newsWeatherMonitoring: boolean;
     learningSystem: boolean;
+    currencyExchange: boolean;
   };
 }
 
@@ -176,7 +177,8 @@ function getConfigFromEnv(): AppConfig {
       profanityFilter: process.env.ENABLE_PROFANITY_FILTER !== 'false',
       newsWeatherMonitoring: (process.env.ENABLE_NEWS_WEATHER !== 'false') && 
                            !!(process.env.NEWS_API_KEY && process.env.WEATHER_API_KEY),
-      learningSystem: process.env.ENABLE_LEARNING !== 'false'
+      learningSystem: process.env.ENABLE_LEARNING !== 'false',
+      currencyExchange: process.env.ENABLE_CURRENCY_EXCHANGE !== 'false'
     }
   };
 }

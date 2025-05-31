@@ -38,6 +38,9 @@ export class CLIHandler {
     this.registerCommand('feature-mapping', 'Тестувати feature mapping', this.testFeatureMapping.bind(this));
     this.registerCommand('powerwords', 'Тестувати детектор потужних слів', this.testPowerWordsDetector.bind(this));
     this.registerCommand('chat', 'Почати інтерактивний чат із ботом', this.startInteractiveChat.bind(this));
+    this.registerCommand('currency', 'Тестувати курси валют', this.testCurrencyService.bind(this));
+    this.registerCommand('usd', 'Показати курс долара', this.showUSDRate.bind(this));
+    this.registerCommand('eur', 'Показати курс євро', this.showEURRate.bind(this));
     
     // Команди управління функціями
     this.registerCommand('enable', 'Увімкнути функцію (enable <назва>)', this.enableFeature.bind(this));
@@ -48,7 +51,6 @@ export class CLIHandler {
     this.registerCommand('disable-all', 'Вимкнути всі функції', this.disableAllFeatures.bind(this));
     this.registerCommand('reset-features', 'Скинути функції до стандартних', this.resetFeatures.bind(this));
     this.registerCommand('feature-help', 'Довідка по функціях', this.showFeatureHelp.bind(this));
-    
     this.registerCommand('exit', 'Вийти з CLI режиму', this.exit.bind(this));
   }
 
@@ -831,6 +833,100 @@ export class CLIHandler {
 
     } catch (error) {
       console.error('❌ Помилка тестування Feature Mapping:', error);
+    }
+  }
+
+  private async testCurrencyService(): Promise<void> {
+    console.log('\n💱 Тестування сервісу курсів валют:');
+    console.log('='.repeat(50));
+
+    try {
+      const { CurrencyExchangeService } = require('../domain/currencyExchangeService');
+      const currencyService = new CurrencyExchangeService();
+
+      // Тест 1: Отримання курсу долара
+      console.log('🔄 Тест 1: Отримання курсу USD...');
+      const usdRate = await currencyService.getCurrencyRate('USD');
+      if (usdRate) {
+        console.log(`  ✅ USD: ${usdRate.rate.toFixed(4)} ₴ (${usdRate.date})`);
+      } else {
+        console.log('  ❌ Не вдалося отримати курс USD');
+      }
+
+      // Тест 2: Отримання курсу євро
+      console.log('\n🔄 Тест 2: Отримання курсу EUR...');
+      const eurRate = await currencyService.getCurrencyRate('EUR');
+      if (eurRate) {
+        console.log(`  ✅ EUR: ${eurRate.rate.toFixed(4)} ₴ (${eurRate.date})`);
+      } else {
+        console.log('  ❌ Не вдалося отримати курс EUR');
+      }
+
+      // Тест 3: Конвертація
+      console.log('\n🔄 Тест 3: Конвертація 100 USD в UAH...');
+      const conversion = await currencyService.convertCurrency(100, 'USD');
+      if (conversion) {
+        console.log(`  ✅ 100 USD = ${conversion.result.toFixed(2)} ₴`);
+      } else {
+        console.log('  ❌ Не вдалося конвертувати валюту');
+      }
+
+      // Тест 4: Популярні курси
+      console.log('\n🔄 Тест 4: Популярні курси...');
+      const popularRates = await currencyService.getPopularCurrencies();
+      if (popularRates.length > 0) {
+        console.log('  ✅ Популярні курси:');
+        popularRates.forEach((rate: any) => {
+          console.log(`    ${rate.code}: ${rate.rate.toFixed(4)} ₴`);
+        });
+      } else {
+        console.log('  ❌ Не вдалося отримати популярні курси');
+      }
+
+    } catch (error) {
+      console.error('❌ Помилка тестування валютного сервісу:', error);
+    }
+  }
+
+  private async showUSDRate(): Promise<void> {
+    console.log('\n💵 Курс долара США:');
+    console.log('='.repeat(30));
+
+    try {
+      const { CurrencyExchangeService } = require('../domain/currencyExchangeService');
+      const currencyService = new CurrencyExchangeService();
+      
+      const usdRate = await currencyService.getCurrencyRate('USD');
+      if (usdRate) {
+        console.log(`💱 1 USD = ${usdRate.rate.toFixed(4)} ₴`);
+        console.log(`📅 Дата: ${usdRate.date}`);
+        console.log(`🏦 Офіційний курс НБУ`);
+      } else {
+        console.log('❌ Не вдалося отримати курс долара');
+      }
+    } catch (error) {
+      console.error('❌ Помилка отримання курсу:', error);
+    }
+  }
+
+  private async showEURRate(): Promise<void> {
+    console.log('\n💶 Курс євро:');
+    console.log('='.repeat(30));
+
+    try {
+      const { CurrencyExchangeService } = require('../domain/currencyExchangeService');
+      const currencyService = new CurrencyExchangeService();
+      
+      const eurRate = await currencyService.getCurrencyRate('EUR');
+      if (eurRate) {
+        console.log(`💱 1 EUR = ${eurRate.rate.toFixed(4)} ₴`);
+        console.log(`📅 Дата: ${eurRate.date}`);
+        console.log(`🏦 Офіційний курс НБУ`);
+      } else {
+        console.log('❌ Не вдалося отримати курс євро');
+      }
+    } catch (error) {
+      console.error('❌ Помилка отримання курсу:', error);
     }
   }
 
