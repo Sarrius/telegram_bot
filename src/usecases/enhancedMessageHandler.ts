@@ -11,6 +11,7 @@ import { analyzeMessage } from '../domain/messageAnalyzer';
 import { FeatureManager } from '../config/featureManager';
 import { KnowledgeSearchHandler, KnowledgeSearchResponse } from './knowledgeSearchHandler';
 import { CLICommandHandler, CLICommandResponse } from './cliCommandHandler';
+import { CurrencyHandler, CurrencyResponse } from './currencyHandler';
 
 export interface EnhancedMessageContext extends MessageContext {
   isDirectMention?: boolean;
@@ -60,7 +61,13 @@ export interface EnhancedBotResponse extends BotResponse {
     args: string[];
     response: string;
   };
-  responseType: 'reaction' | 'reply' | 'conversation' | 'content_warning' | 'moderation' | 'meme' | 'atmosphere' | 'power_word' | 'memory' | 'knowledge' | 'cli' | 'none';
+  currencyResponse?: {
+    rate?: any;
+    conversion?: any;
+    currencies?: any[];
+    responseType: CurrencyResponse['responseType'];
+  };
+  responseType: 'reaction' | 'reply' | 'conversation' | 'content_warning' | 'moderation' | 'meme' | 'atmosphere' | 'power_word' | 'memory' | 'knowledge' | 'cli' | 'currency' | 'none';
 }
 
 export class EnhancedMessageHandler {
@@ -76,6 +83,7 @@ export class EnhancedMessageHandler {
   private featureManager: FeatureManager;
   private knowledgeSearchHandler: KnowledgeSearchHandler;
   private cliCommandHandler: CLICommandHandler;
+  private currencyHandler: CurrencyHandler;
   
   private engagementCheckInterval: NodeJS.Timeout | null = null;
   private chatEngagementCallbacks: Map<string, (action: any) => void> = new Map();
@@ -103,6 +111,7 @@ export class EnhancedMessageHandler {
     this.featureManager = FeatureManager.getInstance();
     this.knowledgeSearchHandler = new KnowledgeSearchHandler();
     this.cliCommandHandler = new CLICommandHandler();
+    this.currencyHandler = new CurrencyHandler();
 
     console.log('🇺🇦 Enhanced Ukrainian Telegram Bot Handler initialized with memory system');
     // Start periodic atmosphere engagement checks
@@ -231,7 +240,29 @@ export class EnhancedMessageHandler {
       // Generate response to update user statistics (we may not use the response)
       await this.nlpEngine.generateConversationalResponse(nlpContext);
 
-      // Step 3: Check for bot capabilities requests (high priority)
+      // Step 3: Check for currency queries (exchange rates, conversions) - high priority for direct commands
+      // Clean text from bot mentions for currency processing
+      const cleanTextForCurrency = context.text.replace(/@\w+\s*/gi, '').trim();
+      const currencyResponse = await this.currencyHandler.handleMessage(cleanTextForCurrency || context.text);
+      if (currencyResponse.shouldRespond) {
+        console.log(`💱 Currency command processed: ${currencyResponse.responseType} (${Math.round((currencyResponse as any).confidence || 1 * 100)}%)`);
+        return {
+          ...this.createBaseResponse(),
+          shouldReply: true,
+          reply: currencyResponse.response,
+          confidence: 0.95,
+          reasoning: `Currency command: ${currencyResponse.responseType}`,
+          currencyResponse: {
+            responseType: currencyResponse.responseType,
+            rate: currencyResponse.responseType === 'currency_rate' ? currencyResponse : undefined,
+            conversion: currencyResponse.responseType === 'currency_convert' ? currencyResponse : undefined,
+            currencies: currencyResponse.responseType === 'currency_list' ? [currencyResponse] : undefined
+          },
+          responseType: 'currency'
+        };
+      }
+
+      // Step 3.8: Check for bot capabilities requests (high priority)
       if (this.isBotCapabilitiesRequest(context)) {
         const capabilitiesResponse = await this.handleCapabilitiesRequest(context);
         if (capabilitiesResponse) {
