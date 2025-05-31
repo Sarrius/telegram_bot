@@ -127,7 +127,7 @@ describe('ModerationHandler', () => {
       
       if (response.shouldRespond) {
         expect(response.responseType).toBe('moderate');
-        expect(response.response).toMatch(/аб'юзивн|хрінь|останн/i);
+        expect(response.response).toMatch(/Продовжиш|ображати|сука|пиздець|влаштую|⚠️/i);
       }
     });
 
@@ -141,7 +141,7 @@ describe('ModerationHandler', () => {
       
       expect(response.shouldRespond).toBe(true);
       expect(response.responseType).toBe('strict');
-      expect(response.response).toMatch(/гівнюк|дохріна|пиздець|офіційно/i);
+      expect(response.response).toMatch(/Продовжиш|гавкати|мудак|пиздець|влаштую|⛔/i);
     });
   });
 

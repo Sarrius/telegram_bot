@@ -595,26 +595,39 @@ export class EnhancedMessageHandler {
 
   // Bot capabilities methods
   private isBotCapabilitiesRequest(context: EnhancedMessageContext): boolean {
-    return this.botCapabilities.detectCapabilityRequest(context.text);
+    const result = this.botCapabilities.detectCapabilityRequest(context.text);
+    return result.isRequest;
   }
 
   private async handleCapabilitiesRequest(context: EnhancedMessageContext): Promise<EnhancedBotResponse | null> {
     try {
-      // Detect language
-      const language = this.detectLanguage(context.text);
+      // Use fuzzy matching result for better language detection
+      const capabilityResult = this.botCapabilities.detectCapabilityRequest(context.text);
+      
+      // Determine final language for response
+      let responseLanguage: 'uk' | 'en' = 'uk'; // Default to Ukrainian
+      
+      if (capabilityResult.language) {
+        responseLanguage = capabilityResult.language === 'en' ? 'en' : 'uk';
+      } else {
+        // Fallback to old language detection
+        const fallbackLanguage = this.detectLanguage(context.text);
+        responseLanguage = fallbackLanguage === 'en' ? 'en' : 'uk';
+      }
+      
       const response = this.botCapabilities.generateCapabilitiesResponse(
-        language === 'uk' || language === 'mixed' ? 'uk' : 'en',
+        responseLanguage,
         context.userName
       );
 
-      console.log(`📋 Capabilities request from ${context.userName} (${language})`);
+      console.log(`📋 Capabilities request from ${context.userName} (${responseLanguage}, confidence: ${capabilityResult.confidence}, trigger: "${capabilityResult.matchedTrigger || 'fallback'}")`);
 
       return {
         ...this.createBaseResponse(),
         shouldReply: true,
         reply: response,
-        confidence: 0.95,
-        reasoning: 'Bot capabilities request detected',
+        confidence: capabilityResult.confidence || 0.95,
+        reasoning: `Bot capabilities request detected${capabilityResult.matchedTrigger ? ` via "${capabilityResult.matchedTrigger}"` : ' via fallback'}`,
         conversationResponse: response,
         responseType: 'conversation'
       };

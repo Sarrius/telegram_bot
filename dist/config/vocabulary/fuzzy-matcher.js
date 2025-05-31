@@ -34,9 +34,9 @@ class FuzzyMatcher {
             ]);
             const fuse = new fuse_js_1.default(searchableItems, {
                 keys: ['word'],
-                threshold: 0.4, // 60% similarity required
+                threshold: 0.2, // Підвищено з 0.4 до 0.2 - більш строгий збіг (80% similarity required)
                 distance: 100,
-                minMatchCharLength: 2,
+                minMatchCharLength: 3, // Підвищено з 2 до 3 - довші слова для збігу
                 includeScore: true,
                 findAllMatches: false
             });
@@ -98,7 +98,7 @@ class FuzzyMatcher {
     /**
      * Check if text contains words from specific categories
      */
-    findCategoriesInText(text, minConfidence = 0.6) {
+    findCategoriesInText(text, minConfidence = 0.85) {
         const words = this.extractWords(text);
         const categoriesFound = new Map();
         words.forEach(word => {
@@ -118,7 +118,7 @@ class FuzzyMatcher {
      * Get dominant category with confidence scores
      */
     getDominantCategory(text) {
-        const categories = this.findCategoriesInText(text, 0.5);
+        const categories = this.findCategoriesInText(text, 0.85);
         if (categories.size === 0)
             return null;
         let bestCategory = '';
@@ -132,7 +132,7 @@ class FuzzyMatcher {
             const intensityWeight = { low: 1, medium: 2, high: 3 };
             const totalIntensity = matches.reduce((sum, match) => sum + intensityWeight[match.intensity], 0);
             const avgConfidence = matches.reduce((sum, match) => sum + match.confidence, 0) / matches.length;
-            const categoryScore = (matches.length * avgConfidence * totalIntensity) / matches.length;
+            const categoryScore = matches.length * avgConfidence * totalIntensity;
             if (categoryScore > bestScore) {
                 bestScore = categoryScore;
                 bestCategory = category;

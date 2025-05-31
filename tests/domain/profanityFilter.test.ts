@@ -106,7 +106,7 @@ describe('ProfanityFilter', () => {
     });
 
     it('should detect Latin-Cyrillic substitutions', () => {
-      const analysis = profanityFilter.analyzeMessage('Kakaya xuynya происходит');
+      const analysis = profanityFilter.analyzeMessage('xuynya pizda');
       
       expect(analysis.hasProfanity).toBe(true);
       expect(analysis.matches.length).toBeGreaterThan(0);

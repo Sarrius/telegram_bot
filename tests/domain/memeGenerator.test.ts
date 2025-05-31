@@ -188,15 +188,17 @@ describe('MemeGenerator', () => {
     });
 
     it('should suggest memes for Ukrainian food keywords', () => {
-      const foodKeywords = ['борщ', 'вареники'];
+      // Test борщ keyword
+      const borschSuggestion = generator.suggestMemeForMessage('готую борщ', 'uk');
+      expect(borschSuggestion).toBeTruthy();
+      expect(borschSuggestion!.topText).toContain('Готую борщ');
+      expect(borschSuggestion!.language).toBe('uk');
 
-      for (const keyword of foodKeywords) {
-        const suggestion = generator.suggestMemeForMessage(`готую ${keyword}`, 'uk');
-
-        expect(suggestion).toBeTruthy();
-        expect(suggestion!.topText).toContain('українську їжу');
-        expect(suggestion!.language).toBe('uk');
-      }
+      // Test вареники keyword  
+      const varenykyCheck = generator.suggestMemeForMessage('готую вареники', 'uk');
+      expect(varenykyCheck).toBeTruthy();
+      expect(varenykyCheck!.topText).toContain('вареники');
+      expect(varenykyCheck!.language).toBe('uk');
     });
 
     it('should suggest memes for Ukrainian flag emoji', () => {

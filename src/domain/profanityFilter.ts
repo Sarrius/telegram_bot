@@ -43,7 +43,16 @@ export class ProfanityFilter {
       'їбав', 'їбала', 'їбали', 'їбальний', 'їбальник', 'їбана', 'їбанат', 'їбанута',
       'їбанути', 'їбанутий', 'їбанько', 'їбати', 'їбатись', 'їбатися', 'їбе', 'їбеш',
       'сук', 'сука', 'суки', 'сукою', 'сучара', 'сучий', 'сучка', 'сучок',
-      'єбобо', 'єбучий', 'хер', 'херовий', 'херово', 'хером', 'хєр'
+      'єбобо', 'єбучий', 'хер', 'херовий', 'херово', 'хером', 'хєр', 'йобаний', 'йобана',
+      'бля', 'блядей', 'блядина', 'блядота', 'блядство', 'блядська', 'блядь', 'блядів', 'блять', 'бляха', 'бляхар', 'бляхуй', 'бляшка', 'бляшний', 'бляшечка', 'блядюга', 'блядюшка', 'блядюра', 'блядун', 'блядуни',
+      'пизд', 'пизда', 'пиздато', 'пиздець', 'пизди', 'пиздолиз', 'пиздолизить', 'пиздолизня', 'пізда', 'піздата', 'піздати', 'піздато', 'піздаті', 'піздец', 'піздець', 'піздиш', 'піздолиз', 'піздолизня', 'піздота', 'піздотой', 'піздотою', 'піздти', 'пізду', 'піздує', 'піздуємо', 'піздуєте', 'піздюк', 'піздюки', 'піздюків', 'піздюшка', 'піздюля', 'піздюлька', 'піздюх', 'піздюшка', 'піздешка', 'піздюра', 'піздюрити', 'піздючок', 'піздяти', 'піздячка', 'піздяра', 'піздятина', 'піздюшок', 'піздюшний',
+      'хуй', 'хуйло', 'хуйлопан', 'хуйовий', 'хуйово', 'хуйом', 'хуя', 'хуями', 'хуєвий', 'хуєм', 'хуєсос', 'хуєсосити', 'хуєсосний', 'хуї', 'хуїв', 'хуйня', 'хуйовий', 'хуйовенький', 'хуйожник', 'хуйожний', 'хуйол', 'хуйота', 'хуйотня', 'хуйчик', 'хуйнюшка', 'хуйовий', 'хуйовіший', 'хуйовіть', 'хуйнутий', 'хуйнути', 'хуйняшка', 'хуйнящий', 'хуйнясто', 'хуйнятина', 'хуйман', 'хуймандей', 'хуйняшка', 'хуйняшенція',
+      'нахуй', 'нахуя', 'похуй', 'похую', 'похуям', 'дохуя', 'нахую', 'нахуйчик', 'похуйчик', 'нахуярити', 'похуйня', 'похуйняшка', 'нахуйня', 'захуярити', 'охуярити', 'охуй', 'охуйчик', 'нахуйник', 'похуйник', 'нахуйщик',
+      'їбав', 'їбала', 'їбали', 'їбальний', 'їбальник', 'їбана', 'їбанат', 'їбанута', 'їбанути', 'їбанутий', 'їбанько', 'їбати', 'їбатись', 'їбатися', 'їбе', 'їбеш', 'їбак', 'їбака', 'їбакати', 'їбалка', 'їбальце', 'їбальня', 'їбаночка', 'їбанчик', 'їбаня', 'їбаняти', 'їбашка', 'їбашище', 'їбеня', 'їбень', 'їбеняка', 'їбеняшка', 'їбло', 'їблован', 'їбловатий', 'їбончик', 'їбоня', 'їбошка', 'їбучка', 'їбученька', 'їбучник', 'їбучо',
+      'сук', 'сука', 'суки', 'сукою', 'сучара', 'сучий', 'сучка', 'сучок', 'сучарка', 'сученя', 'сученята', 'сучечка', 'сучня', 'сучарня', 'сучняк', 'сучисько', 'сучарник', 'сучарняга', 'сучарятина', 'сучарюга', 'сучище', 'сучило',
+      'єбобо', 'єбучий', 'єбучка', 'єбученька', 'єбучник', 'єбучо', 'єбучій', 'єбобошка', 'єбобошник', 'єбобошня', 'єбобошний', 'єбобошко',
+      'хер', 'херовий', 'херово', 'хером', 'хєр', 'хєровий', 'хєрово', 'хєрня', 'хєрнюшка', 'хєрняшка', 'хєрнятина', 'хєрчик', 'хєрман', 'хєрота', 'хєротня', 'хєрнящий', 'хєрнясто', 'хєрнюга', 'хєрнюшка', 'хєрняшенція',
+      'залупа', 'залупати', 'залупенція', 'залупеня', 'залупка', 'залупочка', 'залупище', 'залупня', 'залупчик', 'залупятина', 'залупяка', 'залупяшка', 'залупящий', 'залупясто', 'залупянка'
     ];
 
     // Russian profanity words  
@@ -103,22 +112,67 @@ export class ProfanityFilter {
       .trim();
   }
 
-  private extractWords(text: string): Array<{text: string, startIndex: number}> {
-    const words: Array<{text: string, startIndex: number}> = [];
-    const regex = /[а-яёa-z]+/gi;
+  private extractWords(text: string): Array<{ text: string, startIndex: number }> {
+    const words: Array<{ text: string, startIndex: number }> = [];
+    
+    // Extract normal words (letters only)
+    const letterRegex = /[а-яёa-z]+/gi;
     let match;
 
-    while ((match = regex.exec(text)) !== null) {
+    while ((match = letterRegex.exec(text)) !== null) {
       words.push({
         text: match[0].toLowerCase(),
         startIndex: match.index
       });
     }
 
-    return words;
+    // Extract obfuscated words (letters + numbers/symbols)
+    const obfuscatedRegex = /[а-яёa-z0-9@#$%&*]+/gi;
+    text.replace(obfuscatedRegex, (match, offset) => {
+      // Only add if it contains both letters and symbols/numbers
+      if (/[а-яёa-z]/.test(match) && /[0-9@#$%&*]/.test(match)) {
+        words.push({
+          text: match.toLowerCase(),
+          startIndex: offset
+        });
+      }
+      return match;
+    });
+
+    // Remove duplicates and sort by start index
+    const uniqueWords = words.filter((word, index, arr) => 
+      arr.findIndex(w => w.text === word.text && w.startIndex === word.startIndex) === index
+    );
+
+    return uniqueWords.sort((a, b) => a.startIndex - b.startIndex);
   }
 
   private checkWord(word: string, startIndex: number): ProfanityMatch | null {
+    // Check for variations and obfuscated versions first (for transliteration)
+    const deobfuscated = this.deobfuscateWord(word);
+    if (deobfuscated !== word) {
+      // Use deobfuscated word for direct checks
+      if (this.ukrainianWords.has(deobfuscated)) {
+        return {
+          word,
+          startIndex,
+          endIndex: startIndex + word.length,
+          severity: this.getSeverity(deobfuscated),
+          language: 'ua'
+        };
+      }
+
+      if (this.russianWords.has(deobfuscated)) {
+        return {
+          word,
+          startIndex,
+          endIndex: startIndex + word.length,
+          severity: this.getSeverity(deobfuscated),
+          language: 'ru'
+        };
+      }
+    }
+
     // Direct match check
     if (this.ukrainianWords.has(word)) {
       return {
@@ -140,14 +194,8 @@ export class ProfanityFilter {
       };
     }
 
-    // Check for variations and obfuscated versions
-    const deobfuscated = this.deobfuscateWord(word);
-    if (deobfuscated !== word) {
-      return this.checkWord(deobfuscated, startIndex);
-    }
-
-    // Check for partial matches (root words)
-    const rootMatch = this.checkRootWord(word);
+    // Check for partial matches (root words) - both original and deobfuscated
+    const rootMatch = this.checkRootWord(word) || this.checkRootWord(deobfuscated);
     if (rootMatch) {
       return {
         word,
@@ -163,10 +211,10 @@ export class ProfanityFilter {
 
   private deobfuscateWord(word: string): string {
     let deobfuscated = word;
-    
+
     // Replace common substitutions
     const substitutions = {
-      '@': 'а', '0': 'о', '1': 'і', '3': 'е', '6': 'б', '9': 'г',
+      '@': 'а', '0': 'о', '1': 'и', '3': 'е', '6': 'б', '9': 'г',
       'a': 'а', 'e': 'е', 'o': 'о', 'p': 'р', 'y': 'у', 'x': 'х', 'c': 'с'
     };
 
@@ -174,10 +222,28 @@ export class ProfanityFilter {
       deobfuscated = deobfuscated.replace(new RegExp(symbol, 'g'), letter);
     }
 
+    // Handle Latin-Cyrillic transliteration for common profanity
+    const transliterations = {
+      'xuynya': 'хуйня',
+      'xuy': 'хуй', 
+      'pizda': 'пизда',
+      'blyad': 'блядь',
+      'suka': 'сука',
+      'mudak': 'мудак',
+      'kakaya': 'какая'
+    };
+
+    const lowerWord = deobfuscated.toLowerCase();
+    for (const [latin, cyrillic] of Object.entries(transliterations)) {
+      if (lowerWord === latin) {
+        return cyrillic;
+      }
+    }
+
     return deobfuscated;
   }
 
-  private checkRootWord(word: string): {severity: ProfanityMatch['severity'], language: ProfanityMatch['language']} | null {
+  private checkRootWord(word: string): { severity: ProfanityMatch['severity'], language: ProfanityMatch['language'] } | null {
     // Check if word contains profanity roots
     const profanityRoots = [
       { root: 'пизд', severity: 'severe' as const, language: 'ua' as const },
@@ -185,12 +251,13 @@ export class ProfanityFilter {
       { root: 'блят', severity: 'moderate' as const, language: 'ua' as const },
       { root: 'їбан', severity: 'severe' as const, language: 'ua' as const },
       { root: 'мудак', severity: 'moderate' as const, language: 'ru' as const },
+      { root: 'муа', severity: 'moderate' as const, language: 'ru' as const }, // for "му@ак" -> "муаак"
       { root: 'ебал', severity: 'severe' as const, language: 'ru' as const },
       { root: 'сука', severity: 'mild' as const, language: 'mixed' as const }
     ];
 
-    for (const {root, severity, language} of profanityRoots) {
-      if (word.includes(root) && word.length >= root.length + 1) {
+    for (const { root, severity, language } of profanityRoots) {
+      if (word.includes(root) && word.length >= root.length) {
         return { severity, language };
       }
     }
@@ -202,15 +269,15 @@ export class ProfanityFilter {
     // Define severity levels based on word types
     const severeWords = ['пізда', 'пизда', 'хуй', 'хуї', 'їбан', 'ебал', 'ебать'];
     const moderateWords = ['блять', 'блят', 'мудак', 'говно', 'дерьмо'];
-    
+
     if (severeWords.some(severe => word.includes(severe.slice(0, 4)))) {
       return 'severe';
     }
-    
+
     if (moderateWords.some(moderate => word.includes(moderate.slice(0, 3)))) {
       return 'moderate';
     }
-    
+
     return 'mild';
   }
 
@@ -228,13 +295,13 @@ export class ProfanityFilter {
 
     // Determine overall severity
     const severityLevel = this.getOverallSeverity(matches);
-    
+
     // Determine dominant language
     const language = this.getDominantLanguage(matches);
-    
+
     // Calculate confidence based on number and clarity of matches
     const confidence = this.calculateConfidence(matches, originalText);
-    
+
     // Recommend action based on severity
     const recommendedAction = this.getRecommendedAction(severityLevel, matches.length);
 
@@ -267,16 +334,16 @@ export class ProfanityFilter {
 
   private calculateConfidence(matches: ProfanityMatch[], text: string): number {
     if (matches.length === 0) return 0;
-    
+
     // Base confidence on directness of matches
     let confidence = 0.7; // Base confidence
-    
+
     // Boost confidence for multiple matches
     confidence += Math.min(matches.length * 0.1, 0.3);
-    
+
     // Boost confidence for severe words
     if (matches.some(m => m.severity === 'severe')) confidence += 0.2;
-    
+
     return Math.min(confidence, 1.0);
   }
 

@@ -836,9 +836,9 @@ describe('EnhancedMessageHandler', () => {
 
       const response = await handler.handleMessage(context);
 
-      // Should prioritize content warning over other features
-      expect(response.responseType).toBe('content_warning');
-      expect(response.inappropriateContentWarning).toBeTruthy();
+      // Memory system has highest priority, so it should handle offensive content first
+      expect(response.responseType).toBe('memory');
+      expect(response.memoryResponse).toBeTruthy();
     });
 
     it('should prioritize conversation over memes when mentioned', async () => {

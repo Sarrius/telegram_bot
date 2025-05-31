@@ -1,3 +1,5 @@
+import { CapabilityFuzzyMatcher } from '../config/vocabulary/capabilityFuzzyMatcher';
+
 export interface BotCapability {
   id: string;
   name: string;
@@ -10,6 +12,7 @@ export interface BotCapability {
 }
 
 export class BotCapabilities {
+  private fuzzyMatcher: CapabilityFuzzyMatcher;
   private capabilities: BotCapability[] = [
     {
       id: 'ukrainian_conversation',
@@ -190,8 +193,97 @@ export class BotCapabilities {
         'Потрібна підтримка'
       ],
       category: 'utility'
+    },
+    {
+      id: 'ukrainian_news',
+      name: 'Ukrainian News',
+      nameUk: 'Українські новини',
+      description: 'Real-time news monitoring and daily summaries from Ukrainian sources',
+      descriptionUk: 'Моніторинг новин у реальному часі та щоденні зводки з українських джерел',
+      examples: [
+        'Які новини?',
+        'Що нового в світі?',
+        'Розкажи останні новини',
+        'Що відбувається в Україні?'
+      ],
+      examplesUk: [
+        'Які новини?',
+        'Що нового в світі?',
+        'Розкажи останні новини',
+        'Що відбувається в Україні?',
+        'Що твориться?',
+        'Свіжі новини'
+      ],
+      category: 'utility'
+    },
+    {
+      id: 'weather_ukraine',
+      name: 'Ukrainian Weather',
+      nameUk: 'Погода в Україні',
+      description: 'Weather information and alerts for Ukrainian cities',
+      descriptionUk: 'Інформація про погоду та попередження для українських міст',
+      examples: [
+        'Яка погода?',
+        'Погода в Києві',
+        'Яка температура?',
+        'Чи буде дощ?'
+      ],
+      examplesUk: [
+        'Яка погода?',
+        'Погода в Києві',
+        'Яка температура?',
+        'Чи буде дощ?',
+        'Як на вулиці?',
+        'Погода сьогодні'
+      ],
+      category: 'utility'
+    },
+    {
+      id: 'morning_summary',
+      name: 'Morning News Summary',
+      nameUk: 'Ранкова зводка новин',
+      description: 'Daily morning summaries with news and weather delivered automatically',
+      descriptionUk: 'Щоденні ранкові зводки з новинами та погодою, що доставляються автоматично',
+      examples: [
+        'Підписатися на ранкові новини',
+        'Хочу щоденні зводки',
+        'Відписатися від новин'
+      ],
+      examplesUk: [
+        'Підписатися на ранкові новини',
+        'Хочу щоденні зводки',
+        'Підписка на новини',
+        'Відписатися від новин',
+        'Ранкові повідомлення'
+      ],
+      category: 'utility'
+    },
+    {
+      id: 'critical_alerts',
+      name: 'Critical News Alerts',
+      nameUk: 'Критичні повідомлення',
+      description: 'Instant notifications about critical events, emergencies, and important news',
+      descriptionUk: 'Миттєві сповіщення про критичні події, надзвичайні ситуації та важливі новини',
+      examples: [
+        'Автоматичні сповіщення про:',
+        '• Надзвичайні ситуації',
+        '• Важливі політичні події',
+        '• Критичні погодні умови'
+      ],
+      examplesUk: [
+        'Автоматичні сповіщення про:',
+        '• Надзвичайні ситуації',
+        '• Важливі політичні події',
+        '• Критичні погодні умови',
+        '• Екстрені повідомлення'
+      ],
+      category: 'utility'
     }
   ];
+
+  constructor() {
+    this.fuzzyMatcher = new CapabilityFuzzyMatcher();
+  }
 
   // Keywords that trigger the capabilities display
   private capabilityTriggers = {
@@ -282,20 +374,55 @@ export class BotCapabilities {
     ]
   };
 
-  detectCapabilityRequest(message: string): boolean {
-    const lowerMessage = message.toLowerCase();
+  detectCapabilityRequest(message: string): {
+    isRequest: boolean;
+    confidence: number;
+    language: 'uk' | 'en';
+    matchedTrigger?: string;
+  } {
+    try {
+      // Використовуємо fuzzy matching для толерантності до помилок
+      const fuzzyResult = this.fuzzyMatcher.detectCapabilityRequest(message);
+      
+      if (fuzzyResult.isCapabilityRequest) {
+        console.log(`Fuzzy match: "${fuzzyResult.matchedTrigger}" (впевненість: ${fuzzyResult.confidence})`);
+        return {
+          isRequest: true,
+          confidence: fuzzyResult.confidence,
+          language: fuzzyResult.language,
+          matchedTrigger: fuzzyResult.matchedTrigger
+        };
+      }
+    } catch (error) {
+      console.warn('Fuzzy matcher error, falling back to old method:', error);
+    }
 
+    // Fallback до старого методу як резервний варіант
+    const lowerMessage = message.toLowerCase();
+    
     // Check Ukrainian triggers
     const ukrainianMatch = this.capabilityTriggers.uk.some(trigger =>
       lowerMessage.includes(trigger)
     );
 
-    // Check English triggers
+    // Check English triggers  
     const englishMatch = this.capabilityTriggers.en.some(trigger =>
       lowerMessage.includes(trigger)
     );
 
-    return ukrainianMatch || englishMatch;
+    if (ukrainianMatch || englishMatch) {
+      return {
+        isRequest: true,
+        confidence: 1.0,
+        language: ukrainianMatch ? 'uk' : 'en'
+      };
+    }
+
+    return {
+      isRequest: false,
+      confidence: 0,
+      language: 'uk'
+    };
   }
 
   generateCapabilitiesResponse(language: 'uk' | 'en' = 'uk', userName?: string): string {

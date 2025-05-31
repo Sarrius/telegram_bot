@@ -1,4 +1,8 @@
 import { BotCapabilities, BotCapability } from '../../src/domain/botCapabilities';
+import { CapabilityFuzzyMatcher } from '../../src/config/vocabulary/capabilityFuzzyMatcher';
+
+// Мокаємо CapabilityFuzzyMatcher
+jest.mock('../../src/config/vocabulary/capabilityFuzzyMatcher');
 
 describe('BotCapabilities', () => {
   let botCapabilities: BotCapabilities;
@@ -8,7 +12,18 @@ describe('BotCapabilities', () => {
   });
 
   describe('detectCapabilityRequest', () => {
-    it('should detect Ukrainian capability requests', () => {
+    let mockFuzzyMatcher: jest.Mocked<CapabilityFuzzyMatcher>;
+
+    beforeEach(() => {
+      mockFuzzyMatcher = {
+        detectCapabilityRequest: jest.fn()
+      } as any;
+      
+      // @ts-ignore - доступ до приватного поля для тестування
+      botCapabilities.fuzzyMatcher = mockFuzzyMatcher;
+    });
+
+    it('should detect Ukrainian capability requests with fuzzy matching', () => {
       const ukrainianRequests = [
         'що ти можеш',
         'що можеш робити',
@@ -28,12 +43,45 @@ describe('BotCapabilities', () => {
       ];
 
       ukrainianRequests.forEach(request => {
-        expect(botCapabilities.detectCapabilityRequest(request)).toBe(true);
-        expect(botCapabilities.detectCapabilityRequest(request.toUpperCase())).toBe(true);
+        mockFuzzyMatcher.detectCapabilityRequest.mockReturnValueOnce({
+          isCapabilityRequest: true,
+          confidence: 1.0,
+          language: 'uk',
+          matchedTrigger: request
+        });
+
+        const result = botCapabilities.detectCapabilityRequest(request);
+        expect(result.isRequest).toBe(true);
+        expect(result.language).toBe('uk');
+        expect(result.confidence).toBe(1.0);
       });
     });
 
-    it('should detect English capability requests', () => {
+    it('should detect Ukrainian capability requests with typos', () => {
+      const requestsWithTypos = [
+        { text: 'шо ти можеш', original: 'що ти можеш' },
+        { text: 'можливосці', original: 'можливості' },
+        { text: 'фукнції', original: 'функції' },
+        { text: 'комманды', original: 'команди' }
+      ];
+
+      requestsWithTypos.forEach(({ text, original }) => {
+        mockFuzzyMatcher.detectCapabilityRequest.mockReturnValueOnce({
+          isCapabilityRequest: true,
+          confidence: 0.85,
+          language: 'uk',
+          matchedTrigger: original
+        });
+
+        const result = botCapabilities.detectCapabilityRequest(text);
+        expect(result.isRequest).toBe(true);
+        expect(result.language).toBe('uk');
+        expect(result.confidence).toBe(0.85);
+        expect(result.matchedTrigger).toBe(original);
+      });
+    });
+
+    it('should detect English capability requests with fuzzy matching', () => {
       const englishRequests = [
         'what can you do',
         'capabilities',
@@ -50,8 +98,41 @@ describe('BotCapabilities', () => {
       ];
 
       englishRequests.forEach(request => {
-        expect(botCapabilities.detectCapabilityRequest(request)).toBe(true);
-        expect(botCapabilities.detectCapabilityRequest(request.toUpperCase())).toBe(true);
+        mockFuzzyMatcher.detectCapabilityRequest.mockReturnValueOnce({
+          isCapabilityRequest: true,
+          confidence: 1.0,
+          language: 'en',
+          matchedTrigger: request
+        });
+
+        const result = botCapabilities.detectCapabilityRequest(request);
+        expect(result.isRequest).toBe(true);
+        expect(result.language).toBe('en');
+        expect(result.confidence).toBe(1.0);
+      });
+    });
+
+    it('should detect English capability requests with typos', () => {
+      const requestsWithTypos = [
+        { text: 'wat can you do', original: 'what can you do' },
+        { text: 'capabilites', original: 'capabilities' },
+        { text: 'featers', original: 'features' },
+        { text: 'halp', original: 'help' }
+      ];
+
+      requestsWithTypos.forEach(({ text, original }) => {
+        mockFuzzyMatcher.detectCapabilityRequest.mockReturnValueOnce({
+          isCapabilityRequest: true,
+          confidence: 0.8,
+          language: 'en',
+          matchedTrigger: original
+        });
+
+        const result = botCapabilities.detectCapabilityRequest(text);
+        expect(result.isRequest).toBe(true);
+        expect(result.language).toBe('en');
+        expect(result.confidence).toBe(0.8);
+        expect(result.matchedTrigger).toBe(original);
       });
     });
 
@@ -67,14 +148,75 @@ describe('BotCapabilities', () => {
       ];
 
       regularMessages.forEach(message => {
-        expect(botCapabilities.detectCapabilityRequest(message)).toBe(false);
+        mockFuzzyMatcher.detectCapabilityRequest.mockReturnValueOnce({
+          isCapabilityRequest: false,
+          confidence: 0.1,
+          language: 'uk'
+        });
+
+        const result = botCapabilities.detectCapabilityRequest(message);
+        expect(result.isRequest).toBe(false);
       });
     });
 
+    it('should fallback to old method when fuzzy matching fails', () => {
+      mockFuzzyMatcher.detectCapabilityRequest.mockReturnValueOnce({
+        isCapabilityRequest: false,
+        confidence: 0.3,
+        language: 'uk'
+      });
+
+      // Тест fallback логіки з старими тригерами
+      const result = botCapabilities.detectCapabilityRequest('що ти можеш');
+      expect(result.isRequest).toBe(true);
+      expect(result.confidence).toBe(1.0);
+      expect(result.language).toBe('uk');
+    });
+
+    it('should handle fuzzy matcher errors gracefully', () => {
+      mockFuzzyMatcher.detectCapabilityRequest.mockImplementationOnce(() => {
+        throw new Error('Fuzzy matcher error');
+      });
+
+      // Має fallback до старого методу
+      const result = botCapabilities.detectCapabilityRequest('що ти можеш');
+      expect(result.isRequest).toBe(true);
+      expect(result.language).toBe('uk');
+    });
+
     it('should detect partial matches in longer sentences', () => {
-      expect(botCapabilities.detectCapabilityRequest('Привіт! Що ти можеш робити?')).toBe(true);
-      expect(botCapabilities.detectCapabilityRequest('Hello there, what are your capabilities?')).toBe(true);
-      expect(botCapabilities.detectCapabilityRequest('Можеш показати свої функції?')).toBe(true);
+      const contextualRequests = [
+        'Привіт! Що ти можеш робити?',
+        'Hello there, what are your capabilities?',
+        'Можеш показати свої функції?'
+      ];
+
+      contextualRequests.forEach(request => {
+        mockFuzzyMatcher.detectCapabilityRequest.mockReturnValueOnce({
+          isCapabilityRequest: true,
+          confidence: 0.9,
+          language: request.includes('Hello') ? 'en' : 'uk',
+          matchedTrigger: request.includes('Hello') ? 'capabilities' : 'що ти можеш'
+        });
+
+        const result = botCapabilities.detectCapabilityRequest(request);
+        expect(result.isRequest).toBe(true);
+        expect(result.confidence).toBe(0.9);
+      });
+    });
+
+    it('should prioritize higher confidence matches', () => {
+      mockFuzzyMatcher.detectCapabilityRequest.mockReturnValueOnce({
+        isCapabilityRequest: true,
+        confidence: 0.95,
+        language: 'uk',
+        matchedTrigger: 'що ти можеш'
+      });
+
+      const result = botCapabilities.detectCapabilityRequest('шо ти можеш робити');
+      expect(result.isRequest).toBe(true);
+      expect(result.confidence).toBe(0.95);
+      expect(result.language).toBe('uk');
     });
   });
 
@@ -182,7 +324,7 @@ describe('BotCapabilities', () => {
     it('should return all capabilities', () => {
       const capabilities = botCapabilities.getAllCapabilities();
       
-      expect(capabilities).toHaveLength(10);
+      expect(capabilities).toHaveLength(14);
       expect(capabilities[0]).toHaveProperty('id');
       expect(capabilities[0]).toHaveProperty('name');
       expect(capabilities[0]).toHaveProperty('nameUk');
@@ -262,7 +404,7 @@ describe('BotCapabilities', () => {
         totalCapabilities += categoryCapabilities.length;
       });
 
-      expect(totalCapabilities).toBe(10); // Should match total number of capabilities
+      expect(totalCapabilities).toBe(14); // Should match total number of capabilities
     });
   });
 

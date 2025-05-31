@@ -24,7 +24,16 @@ class ProfanityFilter {
             'їбав', 'їбала', 'їбали', 'їбальний', 'їбальник', 'їбана', 'їбанат', 'їбанута',
             'їбанути', 'їбанутий', 'їбанько', 'їбати', 'їбатись', 'їбатися', 'їбе', 'їбеш',
             'сук', 'сука', 'суки', 'сукою', 'сучара', 'сучий', 'сучка', 'сучок',
-            'єбобо', 'єбучий', 'хер', 'херовий', 'херово', 'хером', 'хєр'
+            'єбобо', 'єбучий', 'хер', 'херовий', 'херово', 'хером', 'хєр', 'йобаний', 'йобана',
+            'бля', 'блядей', 'блядина', 'блядота', 'блядство', 'блядська', 'блядь', 'блядів', 'блять', 'бляха', 'бляхар', 'бляхуй', 'бляшка', 'бляшний', 'бляшечка', 'блядюга', 'блядюшка', 'блядюра', 'блядун', 'блядуни',
+            'пизд', 'пизда', 'пиздато', 'пиздець', 'пизди', 'пиздолиз', 'пиздолизить', 'пиздолизня', 'пізда', 'піздата', 'піздати', 'піздато', 'піздаті', 'піздец', 'піздець', 'піздиш', 'піздолиз', 'піздолизня', 'піздота', 'піздотой', 'піздотою', 'піздти', 'пізду', 'піздує', 'піздуємо', 'піздуєте', 'піздюк', 'піздюки', 'піздюків', 'піздюшка', 'піздюля', 'піздюлька', 'піздюх', 'піздюшка', 'піздешка', 'піздюра', 'піздюрити', 'піздючок', 'піздяти', 'піздячка', 'піздяра', 'піздятина', 'піздюшок', 'піздюшний',
+            'хуй', 'хуйло', 'хуйлопан', 'хуйовий', 'хуйово', 'хуйом', 'хуя', 'хуями', 'хуєвий', 'хуєм', 'хуєсос', 'хуєсосити', 'хуєсосний', 'хуї', 'хуїв', 'хуйня', 'хуйовий', 'хуйовенький', 'хуйожник', 'хуйожний', 'хуйол', 'хуйота', 'хуйотня', 'хуйчик', 'хуйнюшка', 'хуйовий', 'хуйовіший', 'хуйовіть', 'хуйнутий', 'хуйнути', 'хуйняшка', 'хуйнящий', 'хуйнясто', 'хуйнятина', 'хуйман', 'хуймандей', 'хуйняшка', 'хуйняшенція',
+            'нахуй', 'нахуя', 'похуй', 'похую', 'похуям', 'дохуя', 'нахую', 'нахуйчик', 'похуйчик', 'нахуярити', 'похуйня', 'похуйняшка', 'нахуйня', 'захуярити', 'охуярити', 'охуй', 'охуйчик', 'нахуйник', 'похуйник', 'нахуйщик',
+            'їбав', 'їбала', 'їбали', 'їбальний', 'їбальник', 'їбана', 'їбанат', 'їбанута', 'їбанути', 'їбанутий', 'їбанько', 'їбати', 'їбатись', 'їбатися', 'їбе', 'їбеш', 'їбак', 'їбака', 'їбакати', 'їбалка', 'їбальце', 'їбальня', 'їбаночка', 'їбанчик', 'їбаня', 'їбаняти', 'їбашка', 'їбашище', 'їбеня', 'їбень', 'їбеняка', 'їбеняшка', 'їбло', 'їблован', 'їбловатий', 'їбончик', 'їбоня', 'їбошка', 'їбучка', 'їбученька', 'їбучник', 'їбучо',
+            'сук', 'сука', 'суки', 'сукою', 'сучара', 'сучий', 'сучка', 'сучок', 'сучарка', 'сученя', 'сученята', 'сучечка', 'сучня', 'сучарня', 'сучняк', 'сучисько', 'сучарник', 'сучарняга', 'сучарятина', 'сучарюга', 'сучище', 'сучило',
+            'єбобо', 'єбучий', 'єбучка', 'єбученька', 'єбучник', 'єбучо', 'єбучій', 'єбобошка', 'єбобошник', 'єбобошня', 'єбобошний', 'єбобошко',
+            'хер', 'херовий', 'херово', 'хером', 'хєр', 'хєровий', 'хєрово', 'хєрня', 'хєрнюшка', 'хєрняшка', 'хєрнятина', 'хєрчик', 'хєрман', 'хєрота', 'хєротня', 'хєрнящий', 'хєрнясто', 'хєрнюга', 'хєрнюшка', 'хєрняшенція',
+            'залупа', 'залупати', 'залупенція', 'залупеня', 'залупка', 'залупочка', 'залупище', 'залупня', 'залупчик', 'залупятина', 'залупяка', 'залупяшка', 'залупящий', 'залупясто', 'залупянка'
         ];
         // Russian profanity words  
         const russianProfanity = [
@@ -78,17 +87,55 @@ class ProfanityFilter {
     }
     extractWords(text) {
         const words = [];
-        const regex = /[а-яёa-z]+/gi;
+        // Extract normal words (letters only)
+        const letterRegex = /[а-яёa-z]+/gi;
         let match;
-        while ((match = regex.exec(text)) !== null) {
+        while ((match = letterRegex.exec(text)) !== null) {
             words.push({
                 text: match[0].toLowerCase(),
                 startIndex: match.index
             });
         }
-        return words;
+        // Extract obfuscated words (letters + numbers/symbols)
+        const obfuscatedRegex = /[а-яёa-z0-9@#$%&*]+/gi;
+        text.replace(obfuscatedRegex, (match, offset) => {
+            // Only add if it contains both letters and symbols/numbers
+            if (/[а-яёa-z]/.test(match) && /[0-9@#$%&*]/.test(match)) {
+                words.push({
+                    text: match.toLowerCase(),
+                    startIndex: offset
+                });
+            }
+            return match;
+        });
+        // Remove duplicates and sort by start index
+        const uniqueWords = words.filter((word, index, arr) => arr.findIndex(w => w.text === word.text && w.startIndex === word.startIndex) === index);
+        return uniqueWords.sort((a, b) => a.startIndex - b.startIndex);
     }
     checkWord(word, startIndex) {
+        // Check for variations and obfuscated versions first (for transliteration)
+        const deobfuscated = this.deobfuscateWord(word);
+        if (deobfuscated !== word) {
+            // Use deobfuscated word for direct checks
+            if (this.ukrainianWords.has(deobfuscated)) {
+                return {
+                    word,
+                    startIndex,
+                    endIndex: startIndex + word.length,
+                    severity: this.getSeverity(deobfuscated),
+                    language: 'ua'
+                };
+            }
+            if (this.russianWords.has(deobfuscated)) {
+                return {
+                    word,
+                    startIndex,
+                    endIndex: startIndex + word.length,
+                    severity: this.getSeverity(deobfuscated),
+                    language: 'ru'
+                };
+            }
+        }
         // Direct match check
         if (this.ukrainianWords.has(word)) {
             return {
@@ -108,13 +155,8 @@ class ProfanityFilter {
                 language: 'ru'
             };
         }
-        // Check for variations and obfuscated versions
-        const deobfuscated = this.deobfuscateWord(word);
-        if (deobfuscated !== word) {
-            return this.checkWord(deobfuscated, startIndex);
-        }
-        // Check for partial matches (root words)
-        const rootMatch = this.checkRootWord(word);
+        // Check for partial matches (root words) - both original and deobfuscated
+        const rootMatch = this.checkRootWord(word) || this.checkRootWord(deobfuscated);
         if (rootMatch) {
             return {
                 word,
@@ -130,11 +172,27 @@ class ProfanityFilter {
         let deobfuscated = word;
         // Replace common substitutions
         const substitutions = {
-            '@': 'а', '0': 'о', '1': 'і', '3': 'е', '6': 'б', '9': 'г',
+            '@': 'а', '0': 'о', '1': 'и', '3': 'е', '6': 'б', '9': 'г',
             'a': 'а', 'e': 'е', 'o': 'о', 'p': 'р', 'y': 'у', 'x': 'х', 'c': 'с'
         };
         for (const [symbol, letter] of Object.entries(substitutions)) {
             deobfuscated = deobfuscated.replace(new RegExp(symbol, 'g'), letter);
+        }
+        // Handle Latin-Cyrillic transliteration for common profanity
+        const transliterations = {
+            'xuynya': 'хуйня',
+            'xuy': 'хуй',
+            'pizda': 'пизда',
+            'blyad': 'блядь',
+            'suka': 'сука',
+            'mudak': 'мудак',
+            'kakaya': 'какая'
+        };
+        const lowerWord = deobfuscated.toLowerCase();
+        for (const [latin, cyrillic] of Object.entries(transliterations)) {
+            if (lowerWord === latin) {
+                return cyrillic;
+            }
         }
         return deobfuscated;
     }
@@ -146,11 +204,12 @@ class ProfanityFilter {
             { root: 'блят', severity: 'moderate', language: 'ua' },
             { root: 'їбан', severity: 'severe', language: 'ua' },
             { root: 'мудак', severity: 'moderate', language: 'ru' },
+            { root: 'муа', severity: 'moderate', language: 'ru' }, // for "му@ак" -> "муаак"
             { root: 'ебал', severity: 'severe', language: 'ru' },
             { root: 'сука', severity: 'mild', language: 'mixed' }
         ];
         for (const { root, severity, language } of profanityRoots) {
-            if (word.includes(root) && word.length >= root.length + 1) {
+            if (word.includes(root) && word.length >= root.length) {
                 return { severity, language };
             }
         }

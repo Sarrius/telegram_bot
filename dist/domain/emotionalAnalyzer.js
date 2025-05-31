@@ -6,11 +6,11 @@ class EmotionalAnalyzer {
         this.lastReactionTime = new Map(); // chatId -> timestamp
         this.fuzzyMatcher = fuzzyMatcher;
         this.thresholds = {
-            minimumIntensity: 0.5, // Вища поріг - реагуємо лише на сильні емоції
-            minimumClarity: 0.6, // Вища поріг - емоція має бути чіткою 
-            minimumConfidence: 0.65, // Вища поріг - впевненість має бути високою
-            neutralZone: 0.35, // Ширша нейтральна зона - менше реакцій
-            reactionCooldown: 60000, // 60 секунд між реакціями (було 30)
+            minimumIntensity: 0.3, // Знижено з 0.5 - більше реакцій на помірні емоції
+            minimumClarity: 0.25, // Знижено з 0.4 - менш строга вимога до чіткості після покращення fuzzy matching
+            minimumConfidence: 0.5, // Знижено з 0.65 - розумний поріг впевненості
+            neutralZone: 0.2, // Залишається як було - розумна нейтральна зона
+            reactionCooldown: 30000, // Повернуто до 30 секунд для тестів
             ...customThresholds
         };
     }
