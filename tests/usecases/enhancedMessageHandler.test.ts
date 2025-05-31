@@ -1113,6 +1113,44 @@ describe('EnhancedMessageHandler', () => {
       expect(response.confidence).toBeGreaterThan(0);
       expect(response.reasoning).toContain('Power word detected');
     });
+
+    it('should prioritize power words over capabilities requests', async () => {
+      const context: EnhancedMessageContext = {
+        text: 'Це потужно, що ти можеш?',
+        userId: 'user1',
+        chatId: 'chat1',
+        isGroupChat: true,
+        messageId: 123,
+        isReplyToBot: false,
+        mentionsBot: false,
+        isDirectMention: false
+      };
+
+      const response = await handler.handleMessage(context);
+      expect(response.responseType).toBe('power_word');
+      expect(response.shouldReact).toBe(true);
+      expect(response.reaction).toBe('⚡');
+      expect(response.powerWordReaction?.match.matchedWord).toBe('потужно');
+    });
+
+    it('should prioritize power words over CLI commands', async () => {
+      const context: EnhancedMessageContext = {
+        text: 'потужно help',
+        userId: 'user1',
+        chatId: 'chat1',
+        isGroupChat: true,
+        messageId: 123,
+        isReplyToBot: false,
+        mentionsBot: false,
+        isDirectMention: false
+      };
+
+      const response = await handler.handleMessage(context);
+      expect(response.responseType).toBe('power_word');
+      expect(response.shouldReact).toBe(true);
+      expect(response.reaction).toBe('⚡');
+      expect(response.powerWordReaction?.match.matchedWord).toBe('потужно');
+    });
   });
 
   describe('CLI Commands Handling', () => {

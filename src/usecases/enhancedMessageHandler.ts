@@ -310,7 +310,33 @@ export class EnhancedMessageHandler {
         };
       }
 
-      // Step 6: Check for bot capabilities requests (high priority)
+      // Step 6: Check for power words ("потужно" синоніми) with typo tolerance - HIGH PRIORITY for reactions
+      if (this.featureManager.isEnabled('powerWords')) {
+        const powerWordMatch = this.powerWordsDetector.getBestPowerWordMatch(context.text);
+        if (powerWordMatch) {
+          console.log(`⚡ Power word detected: "${powerWordMatch.originalWord}" -> "${powerWordMatch.matchedWord}" (${(powerWordMatch.confidence * 100).toFixed(1)}%)`);
+          
+          const emoji = this.powerWordsDetector.getReactionEmoji(powerWordMatch);
+          const motivationalResponse = this.powerWordsDetector.getMotivationalResponse(powerWordMatch);
+          
+          return {
+            ...this.createBaseResponse(),
+            shouldReact: true,
+            reaction: emoji,
+            shouldReply: false, // Тільки реакція, без текстової відповіді
+            confidence: powerWordMatch.confidence,
+            reasoning: `Power word detected: ${powerWordMatch.originalWord} -> ${powerWordMatch.matchedWord} (reaction only)`,
+            powerWordReaction: {
+              emoji,
+              match: powerWordMatch,
+              motivationalResponse
+            },
+            responseType: 'power_word'
+          };
+        }
+      }
+
+      // Step 7: Check for bot capabilities requests (lower priority than reactions)
       if (this.isBotCapabilitiesRequest(context)) {
         const capabilitiesResponse = await this.handleCapabilitiesRequest(context);
         if (capabilitiesResponse) {
@@ -318,7 +344,7 @@ export class EnhancedMessageHandler {
         }
       }
 
-      // Step 7: Check for knowledge search queries (questions, math, facts)
+      // Step 8: Check for knowledge search queries (questions, math, facts)
       if (this.featureManager.isEnabled('knowledgeSearch')) {
         const knowledgeResponse = await this.knowledgeSearchHandler.handleMessage(
           context.text,
@@ -342,32 +368,6 @@ export class EnhancedMessageHandler {
             },
             responseType: 'knowledge'
           };
-        }
-      }
-
-      // Step 8: Check for power words ("потужно" синоніми) with typo tolerance
-      if (this.featureManager.isEnabled('powerWords')) {
-      const powerWordMatch = this.powerWordsDetector.getBestPowerWordMatch(context.text);
-      if (powerWordMatch) {
-        console.log(`⚡ Power word detected: "${powerWordMatch.originalWord}" -> "${powerWordMatch.matchedWord}" (${(powerWordMatch.confidence * 100).toFixed(1)}%)`);
-        
-        const emoji = this.powerWordsDetector.getReactionEmoji(powerWordMatch);
-        const motivationalResponse = this.powerWordsDetector.getMotivationalResponse(powerWordMatch);
-        
-        return {
-          ...this.createBaseResponse(),
-          shouldReact: true,
-          reaction: emoji,
-            shouldReply: false, // Тільки реакція, без текстової відповіді
-          confidence: powerWordMatch.confidence,
-            reasoning: `Power word detected: ${powerWordMatch.originalWord} -> ${powerWordMatch.matchedWord} (reaction only)`,
-          powerWordReaction: {
-            emoji,
-            match: powerWordMatch,
-            motivationalResponse
-          },
-          responseType: 'power_word'
-        };
         }
       }
 

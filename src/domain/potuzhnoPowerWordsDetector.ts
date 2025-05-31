@@ -128,6 +128,12 @@ export class PotuzhnoPowerWordsDetector {
         variations: ["блискавично", "блискавка", "блискавична"],
         commonTypos: ["блискавычный", "блыскавычный", "блискавичны"],
         intensity: "high" as const
+      },
+      {
+        word: "зеленський",
+        variations: ["зе", "зеля", "земля", "зелень", "зеленька", "зеленького", "потужнич", "потужняцкий"],
+        commonTypos: ["зеленський", "зеленська", "зеленського"],
+        intensity: "high" as const
       }
     ]
   };
