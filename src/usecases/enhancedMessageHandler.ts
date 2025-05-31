@@ -118,8 +118,10 @@ export class EnhancedMessageHandler {
     this.cliCommandHandler = new CLICommandHandler(this.newsWeatherHandler || undefined);
 
     console.log('🇺🇦 Enhanced Ukrainian Telegram Bot Handler initialized with memory system');
-    // Start periodic atmosphere engagement checks
-    this.startAtmosphereMonitoring();
+    // Start periodic atmosphere engagement checks - ONLY if atmosphere enabled
+    if (this.featureManager.isEnabled('atmosphere')) {
+      this.startAtmosphereMonitoring();
+    }
   }
 
   async handleMessage(context: EnhancedMessageContext): Promise<EnhancedBotResponse> {
@@ -127,52 +129,54 @@ export class EnhancedMessageHandler {
     console.log(`🚀 Enhanced processing: "${context.text?.substring(0, 50)}..." from ${context.userName}`);
 
     try {
-      // Step 0: Check user memory and handle apology demands (highest priority)
-      const isRequest = this.isRequestMessage(context.text);
-      const memoryAnalysis = this.userMemory.analyzeMessage(
-        context.userId,
-        context.userName,
-        context.firstName,
-        context.text,
-        isRequest
-      );
+      // Step 0: Check user memory and handle apology demands (highest priority) - ONLY if memory enabled
+      if (this.featureManager.isEnabled('memory')) {
+        const isRequest = this.isRequestMessage(context.text);
+        const memoryAnalysis = this.userMemory.analyzeMessage(
+          context.userId,
+          context.userName,
+          context.firstName,
+          context.text,
+          isRequest
+        );
 
-      // If user needs to apologize and is making a request, block with memory message
-      if (memoryAnalysis.shouldDemandApology && memoryAnalysis.shouldBlock) {
-        console.log(`🧠 Memory system blocking user ${context.userName}: needs apology`);
-        return {
-          ...this.createBaseResponse(),
-          shouldReply: true,
-          reply: memoryAnalysis.memoryMessage,
-          confidence: 1.0,
-          reasoning: `User needs to apologize before making requests`,
-          memoryResponse: {
-            shouldDemandApology: memoryAnalysis.shouldDemandApology,
-            shouldBlock: memoryAnalysis.shouldBlock,
-            emotionalState: memoryAnalysis.emotionalState,
-            message: memoryAnalysis.memoryMessage
-          },
-          responseType: 'memory'
-        };
-      }
+        // If user needs to apologize and is making a request, block with memory message
+        if (memoryAnalysis.shouldDemandApology && memoryAnalysis.shouldBlock) {
+          console.log(`🧠 Memory system blocking user ${context.userName}: needs apology`);
+          return {
+            ...this.createBaseResponse(),
+            shouldReply: true,
+            reply: memoryAnalysis.memoryMessage,
+            confidence: 1.0,
+            reasoning: `User needs to apologize before making requests`,
+            memoryResponse: {
+              shouldDemandApology: memoryAnalysis.shouldDemandApology,
+              shouldBlock: memoryAnalysis.shouldBlock,
+              emotionalState: memoryAnalysis.emotionalState,
+              message: memoryAnalysis.memoryMessage
+            },
+            responseType: 'memory'
+          };
+        }
 
-      // If it's a good apology, respond positively
-      if (memoryAnalysis.shouldRewardGoodBehavior && memoryAnalysis.memoryMessage) {
-        console.log(`🧠 Memory system rewarding user ${context.userName}: good behavior`);
-        return {
-          ...this.createBaseResponse(),
-          shouldReply: true,
-          reply: memoryAnalysis.memoryMessage,
-          confidence: 1.0,
-          reasoning: `Rewarding user for good behavior or apology`,
-          memoryResponse: {
-            shouldDemandApology: memoryAnalysis.shouldDemandApology,
-            shouldBlock: memoryAnalysis.shouldBlock,
-            emotionalState: memoryAnalysis.emotionalState,
-            message: memoryAnalysis.memoryMessage
-          },
-          responseType: 'memory'
-        };
+        // If it's a good apology, respond positively
+        if (memoryAnalysis.shouldRewardGoodBehavior && memoryAnalysis.memoryMessage) {
+          console.log(`🧠 Memory system rewarding user ${context.userName}: good behavior`);
+          return {
+            ...this.createBaseResponse(),
+            shouldReply: true,
+            reply: memoryAnalysis.memoryMessage,
+            confidence: 1.0,
+            reasoning: `Rewarding user for good behavior or apology`,
+            memoryResponse: {
+              shouldDemandApology: memoryAnalysis.shouldDemandApology,
+              shouldBlock: memoryAnalysis.shouldBlock,
+              emotionalState: memoryAnalysis.emotionalState,
+              message: memoryAnalysis.memoryMessage
+            },
+            responseType: 'memory'
+          };
+        }
       }
 
       // Step 1: Check for profanity/inappropriate language (high priority)
@@ -203,49 +207,55 @@ export class EnhancedMessageHandler {
         }
       }
 
-      // Step 2: Check for other inappropriate content 
-      const contentAnalysis = await this.contentDetector.analyzeContent(
-        context.text,
-        context.userId,
-        context.userName || 'Unknown'
-      );
+      // Step 2: Check for other inappropriate content - ONLY if moderation enabled
+      if (this.featureManager.isEnabled('moderation')) {
+        const contentAnalysis = await this.contentDetector.analyzeContent(
+          context.text,
+          context.userId,
+          context.userName || 'Unknown'
+        );
 
-      if (contentAnalysis.isInappropriate) {
-        console.log(`⚠️ Inappropriate content detected: ${contentAnalysis.categories.join(', ')} (${contentAnalysis.severity})`);
-        return {
-          ...this.createBaseResponse(),
-          shouldReply: true,
-          reply: contentAnalysis.suggestedResponse,
-          confidence: contentAnalysis.confidence,
-          reasoning: `Inappropriate content detected: ${contentAnalysis.categories.join(', ')}`,
-          inappropriateContentWarning: contentAnalysis.suggestedResponse,
-          responseType: 'content_warning'
-        };
+        if (contentAnalysis.isInappropriate) {
+          console.log(`⚠️ Inappropriate content detected: ${contentAnalysis.categories.join(', ')} (${contentAnalysis.severity})`);
+          return {
+            ...this.createBaseResponse(),
+            shouldReply: true,
+            reply: contentAnalysis.suggestedResponse,
+            confidence: contentAnalysis.confidence,
+            reasoning: `Inappropriate content detected: ${contentAnalysis.categories.join(', ')}`,
+            inappropriateContentWarning: contentAnalysis.suggestedResponse,
+            responseType: 'content_warning'
+          };
+        }
       }
 
-      // Step 2: Update atmosphere tracking
-      const sentiment = this.extractSentiment(context.text);
-      this.atmosphereEnhancer.updateChatActivity(
-        context.chatId,
-        context.userId,
-        context.userName || 'Unknown',
-        context.text,
-        sentiment
-      );
+      // Step 2: Update atmosphere tracking - ONLY if atmosphere enabled
+      if (this.featureManager.isEnabled('atmosphere')) {
+        const sentiment = this.extractSentiment(context.text);
+        this.atmosphereEnhancer.updateChatActivity(
+          context.chatId,
+          context.userId,
+          context.userName || 'Unknown',
+          context.text,
+          sentiment
+        );
+      }
 
-      // Step 2.1: Always update NLP statistics for tracking purposes
-      const nlpContext: ConversationContext = {
-        userId: context.userId,
-        userName: context.userName || 'Unknown',
-        chatHistory: [],
-        currentMessage: context.text,
-        chatTopic: this.extractChatTopic(context.text)
-      };
-      // Generate response to update user statistics (we may not use the response)
-      await this.nlpEngine.generateConversationalResponse(nlpContext);
+      // Step 2.1: Update NLP statistics for tracking purposes - ONLY if nlp enabled
+      if (this.featureManager.isEnabled('nlp')) {
+        const nlpContext: ConversationContext = {
+          userId: context.userId,
+          userName: context.userName || 'Unknown',
+          chatHistory: [],
+          currentMessage: context.text,
+          chatTopic: this.extractChatTopic(context.text)
+        };
+        // Generate response to update user statistics (we may not use the response)
+        await this.nlpEngine.generateConversationalResponse(nlpContext);
+      }
 
       // Step 3: Check for news/weather queries - high priority for direct commands
-      if (this.newsWeatherHandler) {
+      if (this.newsWeatherHandler && (this.featureManager.isEnabled('news') || this.featureManager.isEnabled('weather'))) {
         const newsWeatherResponse = await this.newsWeatherHandler.handleNewsCommand(
           parseInt(context.chatId), 
           context.text
@@ -371,57 +381,68 @@ export class EnhancedMessageHandler {
         }
       }
 
-      // Step 9: Check for direct conversation requests (mentions, replies, help requests)
-      if (this.isDirectConversationRequest(context)) {
+      // Step 9: Check for direct conversation requests (mentions, replies, help requests) - ONLY if nlp enabled
+      if (this.featureManager.isEnabled('nlp') && this.isDirectConversationRequest(context)) {
         const conversationResponse = await this.handleConversation(context);
         if (conversationResponse) {
           return conversationResponse;
         }
       }
 
-      // Step 10: Check for meme requests
-      if (this.isMemeRequest(context)) {
+      // Step 10: Check for meme requests - ONLY if memes enabled
+      if (this.featureManager.isEnabled('memes') && this.isMemeRequest(context)) {
         const memeResponse = await this.handleMemeRequest(context);
         if (memeResponse) {
           return memeResponse;
         }
       }
 
-      // Step 11: Enhanced emotional trigger detection
-      const shouldEngageEmotionally = this.shouldEngageBasedOnEmotions(context);
-      if (!shouldEngageEmotionally.shouldEngage) {
-        console.log(`🤐 Staying quiet: ${shouldEngageEmotionally.reasoning}`);
+      // Step 11: Enhanced emotional trigger detection - ONLY if atmosphere enabled
+      if (this.featureManager.isEnabled('atmosphere')) {
+        const shouldEngageEmotionally = this.shouldEngageBasedOnEmotions(context);
+        if (!shouldEngageEmotionally.shouldEngage) {
+          console.log(`🤐 Staying quiet: ${shouldEngageEmotionally.reasoning}`);
+          return {
+            ...this.createBaseResponse(),
+            confidence: shouldEngageEmotionally.confidence,
+            reasoning: shouldEngageEmotionally.reasoning,
+            responseType: 'none'
+          };
+        }
+
+        // Step 12: Use base handler for sentiment reactions only if we decided to engage
+        const baseResponse = await this.baseHandler.handleMessage(context);
+
+        // Step 13: Enhance with meme suggestions if appropriate
+        if (baseResponse.shouldReact && Math.random() < 0.1) { // 10% chance to suggest meme
+          const memeData = await this.tryGenerateContextualMeme(context.text);
+          if (memeData) {
+            return {
+              ...baseResponse,
+              memeResponse: memeData,
+              responseType: 'meme'
+            };
+          }
+        }
+
+        // Step 14: Return enhanced base response
+        const processingTime = Date.now() - startTime;
+        console.log(`✅ Enhanced processing completed in ${processingTime}ms`);
+        
+        return {
+          ...baseResponse,
+          responseType: baseResponse.shouldReact ? 'reaction' : (baseResponse.shouldReply ? 'reply' : 'none')
+        };
+      } else {
+        // If atmosphere is disabled, don't engage emotionally
+        console.log(`🤐 Atmosphere disabled: not engaging emotionally`);
         return {
           ...this.createBaseResponse(),
-          confidence: shouldEngageEmotionally.confidence,
-          reasoning: shouldEngageEmotionally.reasoning,
+          confidence: 0.9,
+          reasoning: 'Atmosphere feature disabled - no emotional engagement',
           responseType: 'none'
         };
       }
-
-      // Step 12: Use base handler for sentiment reactions only if we decided to engage
-      const baseResponse = await this.baseHandler.handleMessage(context);
-
-      // Step 13: Enhance with meme suggestions if appropriate
-      if (baseResponse.shouldReact && Math.random() < 0.1) { // 10% chance to suggest meme
-        const memeData = await this.tryGenerateContextualMeme(context.text);
-        if (memeData) {
-          return {
-            ...baseResponse,
-            memeResponse: memeData,
-            responseType: 'meme'
-          };
-        }
-      }
-
-      // Step 14: Return enhanced base response
-      const processingTime = Date.now() - startTime;
-      console.log(`✅ Enhanced processing completed in ${processingTime}ms`);
-      
-      return {
-        ...baseResponse,
-        responseType: baseResponse.shouldReact ? 'reaction' : (baseResponse.shouldReply ? 'reply' : 'none')
-      };
 
     } catch (error) {
       console.error('❌ Error in enhanced message handling:', error);
@@ -537,6 +558,10 @@ export class EnhancedMessageHandler {
   }
 
   private async checkForEngagementOpportunities(): Promise<void> {
+    if (!this.featureManager.isEnabled('atmosphere')) {
+      return; // Skip if atmosphere is disabled
+    }
+    
     for (const [chatId, callback] of this.chatEngagementCallbacks.entries()) {
       try {
         const action = await this.atmosphereEnhancer.generateEngagementAction(chatId);
