@@ -4,6 +4,20 @@ An intelligent Ukrainian Telegram bot with sentiment analysis, NLP conversation 
 
 ## 🎯 Complete Feature Overview
 
+### 🤖 **Bot Capabilities Display**
+- **Smart help system** - responds to capability questions in Ukrainian/English
+- **Comprehensive feature list** - displays all bot functions with examples
+- **Auto-detection** - recognizes questions about bot abilities
+- **Multi-language support** - responds in user's preferred language
+
+**Capability Request Examples:**
+```
+Що ти можеш?                    # What can you do?
+Які твої функції?               # What are your functions?
+What are your capabilities?     # English capability requests
+Покажи команди                  # Show commands
+```
+
 ### 🗣️ **Natural Language Processing (NLP) Conversation Engine**
 - **Ukrainian-first conversations** with intelligent intent detection
 - **Smart context management** - remembers conversation history across chats
@@ -78,6 +92,21 @@ Ukrainian: "Коли хтось каже 'на українській'"
 - Keywords: `мем`, `meme`, `смішно`, `код не працює`, `кава`, `понеділок`
 - Commands: `/meme топ|низ`, `створи мем про...`, `make meme about...`
 - Context: Flag emoji 🇺🇦, Ukrainian food (борщ, вареники), confusion expressions
+
+### 📋 **Interactive Help System**
+- **Capability detection** - automatically recognizes help requests
+- **Context-aware responses** - shows relevant features based on current conversation
+- **Multiple language support** - displays help in Ukrainian or English
+- **Comprehensive feature overview** - lists all available bot functions with examples
+
+**Help Request Examples:**
+```
+Що ти можеш робити?             # What can you do?
+Покажи всі команди              # Show all commands  
+What are your features?         # English help request
+Твої можливості                 # Your capabilities
+Розкажи про себе               # Tell me about yourself
+```
 
 ### 🎯 **Enhanced Sentiment-Based Reactions**
 - **Deep emotional analysis** with Ukrainian cultural understanding
@@ -448,6 +477,29 @@ Bot: 👑 Мем Лорд @username знову вражає! Зібрано: 5 �
 Bot: 🎯 Час для цікавого факту! 
      Знаете, що слово "мавпа" українською походить від арабського? 🐒
 ```
+
+## 🚀 **Quick Start**
+
+1. **Clone the repository**
+2. **Install dependencies**: `npm install`
+3. **Set up environment variables** (see DEPLOYMENT.md)
+4. **Run tests**: `npm test` (417 tests, 91.86% coverage)
+5. **Start the bot**: `npm start`
+
+For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+## 💬 **How to Use**
+
+Simply add the bot to your Telegram group and start interacting:
+
+```
+@bot Що ти можеш?              # See all capabilities
+@bot Привіт! Як справи?        # Start a conversation
+Розкажи жарт                   # Request a joke
+/meme топ текст | низ текст    # Create a meme
+```
+
+The bot automatically detects Ukrainian and responds appropriately!
 
 ## 🚀 Deployment
 

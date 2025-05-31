@@ -88,6 +88,156 @@ describe('EnhancedMessageHandler', () => {
     });
   });
 
+  describe('Bot Capabilities Handling', () => {
+    it('should handle Ukrainian capability requests', async () => {
+      const context: EnhancedMessageContext = {
+        text: 'Що ти можеш робити?',
+        userId: 'user1',
+        chatId: 'chat1',
+        userName: 'TestUser',
+        isGroupChat: true,
+        messageId: 123,
+        isReplyToBot: false,
+        mentionsBot: true,
+        isDirectMention: true
+      };
+
+      const response = await handler.handleMessage(context);
+
+      expect(response.responseType).toBe('conversation');
+      expect(response.shouldReply).toBe(true);
+      expect(response.conversationResponse).toBeTruthy();
+      expect(response.conversationResponse).toContain('Привіт, TestUser!');
+      expect(response.conversationResponse).toContain('🤖 Ось що я можу робити:');
+      expect(response.confidence).toBeGreaterThan(0.9);
+    });
+
+    it('should handle English capability requests', async () => {
+      const context: EnhancedMessageContext = {
+        text: 'What can you do?',
+        userId: 'user1',
+        chatId: 'chat1',
+        userName: 'TestUser',
+        isGroupChat: true,
+        messageId: 123,
+        isReplyToBot: false,
+        mentionsBot: true,
+        isDirectMention: true
+      };
+
+      const response = await handler.handleMessage(context);
+
+      expect(response.responseType).toBe('conversation');
+      expect(response.shouldReply).toBe(true);
+      expect(response.conversationResponse).toBeTruthy();
+      expect(response.conversationResponse).toContain('Hello, TestUser!');
+      expect(response.conversationResponse).toContain('🤖 Here\'s what I can do:');
+      expect(response.confidence).toBeGreaterThan(0.9);
+    });
+
+    it('should handle capability requests without user name', async () => {
+      const context: EnhancedMessageContext = {
+        text: 'покажи команди',
+        userId: 'user1',
+        chatId: 'chat1',
+        isGroupChat: true,
+        messageId: 123,
+        isReplyToBot: false,
+        mentionsBot: true,
+        isDirectMention: true
+      };
+
+      const response = await handler.handleMessage(context);
+
+      expect(response.responseType).toBe('conversation');
+      expect(response.shouldReply).toBe(true);
+      expect(response.conversationResponse).toBeTruthy();
+      expect(response.conversationResponse).toContain('Привіт!');
+      expect(response.confidence).toBeGreaterThan(0.9);
+    });
+
+    it('should detect various Ukrainian capability triggers', async () => {
+      const triggers = [
+        'можливості',
+        'функції',
+        'команди',
+        'що вмієш',
+        'які функції',
+        'допомога',
+        'розкажи про себе'
+      ];
+
+      for (const trigger of triggers) {
+        const context: EnhancedMessageContext = {
+          text: trigger,
+          userId: 'user1',
+          chatId: 'chat1',
+          userName: 'TestUser',
+          isGroupChat: true,
+          messageId: 123,
+          isReplyToBot: false,
+          mentionsBot: true,
+          isDirectMention: true
+        };
+
+        const response = await handler.handleMessage(context);
+        expect(response.responseType).toBe('conversation');
+        expect(response.shouldReply).toBe(true);
+      }
+    });
+
+    it('should detect various English capability triggers', async () => {
+      const triggers = [
+        'capabilities',
+        'features',
+        'commands',
+        'help',
+        'bot capabilities',
+        'show features'
+      ];
+
+      for (const trigger of triggers) {
+        const context: EnhancedMessageContext = {
+          text: trigger,
+          userId: 'user1',
+          chatId: 'chat1',
+          userName: 'TestUser',
+          isGroupChat: true,
+          messageId: 123,
+          isReplyToBot: false,
+          mentionsBot: true,
+          isDirectMention: true
+        };
+
+        const response = await handler.handleMessage(context);
+        expect(response.responseType).toBe('conversation');
+        expect(response.shouldReply).toBe(true);
+      }
+    });
+
+    it('should include all feature categories in response', async () => {
+      const context: EnhancedMessageContext = {
+        text: 'What are your capabilities?',
+        userId: 'user1',
+        chatId: 'chat1',
+        userName: 'TestUser',
+        isGroupChat: true,
+        messageId: 123,
+        isReplyToBot: false,
+        mentionsBot: true,
+        isDirectMention: true
+      };
+
+      const response = await handler.handleMessage(context);
+
+      expect(response.conversationResponse).toContain('💬 Conversations');
+      expect(response.conversationResponse).toContain('🎭 Entertainment');
+      expect(response.conversationResponse).toContain('👥 Social Features');
+      expect(response.conversationResponse).toContain('🛡️ Moderation');
+      expect(response.conversationResponse).toContain('🔧 Utilities');
+    });
+  });
+
   describe('NLP Conversation Handling', () => {
     it('should handle direct Ukrainian conversation requests', async () => {
       const context: EnhancedMessageContext = {

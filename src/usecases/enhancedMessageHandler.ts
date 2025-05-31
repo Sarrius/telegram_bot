@@ -3,6 +3,7 @@ import { NLPConversationEngine, ConversationContext } from '../domain/nlpConvers
 import { InappropriateContentDetector, ContentConfiguration } from '../domain/inappropriateContentDetector';
 import { AtmosphereEnhancer, AtmosphereConfig } from '../domain/atmosphereEnhancer';
 import { MemeGenerator, MemeRequest } from '../domain/memeGenerator';
+import { BotCapabilities } from '../domain/botCapabilities';
 import { analyzeMessage } from '../domain/messageAnalyzer';
 
 export interface EnhancedMessageContext extends MessageContext {
@@ -33,6 +34,7 @@ export class EnhancedMessageHandler {
   private contentDetector: InappropriateContentDetector;
   private atmosphereEnhancer: AtmosphereEnhancer;
   private memeGenerator: MemeGenerator;
+  private botCapabilities: BotCapabilities;
   
   private engagementCheckInterval: NodeJS.Timeout | null = null;
   private chatEngagementCallbacks: Map<string, (action: any) => void> = new Map();
@@ -52,6 +54,7 @@ export class EnhancedMessageHandler {
       ...atmosphereConfig
     });
     this.memeGenerator = new MemeGenerator();
+    this.botCapabilities = new BotCapabilities();
 
     console.log('🇺🇦 Enhanced Ukrainian Telegram Bot Handler initialized');
     // Start periodic atmosphere engagement checks
@@ -104,7 +107,15 @@ export class EnhancedMessageHandler {
       // Generate response to update user statistics (we may not use the response)
       await this.nlpEngine.generateConversationalResponse(nlpContext);
 
-      // Step 3: Check for direct conversation requests
+      // Step 3: Check for bot capabilities requests
+      if (this.isBotCapabilitiesRequest(context)) {
+        const capabilitiesResponse = await this.handleCapabilitiesRequest(context);
+        if (capabilitiesResponse) {
+          return capabilitiesResponse;
+        }
+      }
+
+      // Step 4: Check for direct conversation requests
       if (this.isDirectConversationRequest(context)) {
         const conversationResponse = await this.handleConversation(context);
         if (conversationResponse) {
@@ -112,7 +123,7 @@ export class EnhancedMessageHandler {
         }
       }
 
-      // Step 4: Check for meme requests
+      // Step 5: Check for meme requests
       if (this.isMemeRequest(context)) {
         const memeResponse = await this.handleMemeRequest(context);
         if (memeResponse) {
@@ -389,6 +400,62 @@ export class EnhancedMessageHandler {
 
   public addCustomForbiddenWords(words: string[]): void {
     this.contentDetector.addCustomForbiddenWords(words);
+  }
+
+  // Bot capabilities methods
+  private isBotCapabilitiesRequest(context: EnhancedMessageContext): boolean {
+    return this.botCapabilities.detectCapabilityRequest(context.text);
+  }
+
+  private async handleCapabilitiesRequest(context: EnhancedMessageContext): Promise<EnhancedBotResponse | null> {
+    try {
+      // Detect language
+      const language = this.detectLanguage(context.text);
+      const response = this.botCapabilities.generateCapabilitiesResponse(
+        language === 'uk' || language === 'mixed' ? 'uk' : 'en',
+        context.userName
+      );
+
+      console.log(`📋 Capabilities request from ${context.userName} (${language})`);
+
+      return {
+        ...this.createBaseResponse(),
+        shouldReply: true,
+        reply: response,
+        confidence: 0.95,
+        reasoning: 'Bot capabilities request detected',
+        conversationResponse: response,
+        responseType: 'conversation'
+      };
+    } catch (error) {
+      console.error('❌ Error in capabilities handling:', error);
+      return null;
+    }
+  }
+
+  private detectLanguage(text: string): 'uk' | 'en' | 'mixed' {
+    const lowerText = text.toLowerCase();
+    
+    // Check for Ukrainian specific characters and words
+    const ukrainianChars = /[іїєґ]/g;
+    const ukrainianWords = ['що', 'як', 'коли', 'де', 'чому', 'і', 'в', 'на', 'з', 'можеш', 'можливості', 'функції'];
+    
+    const hasUkrainianChars = ukrainianChars.test(lowerText);
+    const ukrainianWordCount = ukrainianWords.filter(word => lowerText.includes(word)).length;
+    
+    if (hasUkrainianChars || ukrainianWordCount >= 1) {
+      return 'uk';
+    }
+    
+    // Check for mixed language
+    const englishWords = ['what', 'can', 'you', 'do', 'capabilities', 'features', 'help'];
+    const englishWordCount = englishWords.filter(word => lowerText.includes(word)).length;
+    
+    if (ukrainianWordCount > 0 && englishWordCount > 0) {
+      return 'mixed';
+    }
+    
+    return englishWordCount > 0 ? 'en' : 'uk';
   }
 
   // Cleanup
