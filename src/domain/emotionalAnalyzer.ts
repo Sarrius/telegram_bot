@@ -26,11 +26,11 @@ export class EmotionalAnalyzer {
   constructor(fuzzyMatcher: FuzzyMatcher, customThresholds: Partial<EmotionalThresholds> = {}) {
     this.fuzzyMatcher = fuzzyMatcher;
     this.thresholds = {
-      minimumIntensity: 0.15,     // Lower threshold - was 0.25
-      minimumClarity: 0.2,        // Lower threshold - was 0.3  
-      minimumConfidence: 0.25,    // Lower threshold - was 0.4
-      neutralZone: 0.1,           // Smaller neutral zone - was 0.15
-      reactionCooldown: 30000,    // 30 seconds between reactions
+      minimumIntensity: 0.5,      // Вища поріг - реагуємо лише на сильні емоції
+      minimumClarity: 0.6,        // Вища поріг - емоція має бути чіткою 
+      minimumConfidence: 0.65,    // Вища поріг - впевненість має бути високою
+      neutralZone: 0.35,          // Ширша нейтральна зона - менше реакцій
+      reactionCooldown: 60000,    // 60 секунд між реакціями (було 30)
       ...customThresholds
     };
   }

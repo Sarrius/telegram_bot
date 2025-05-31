@@ -171,6 +171,7 @@ async function handleMessage(msg) {
             userId: msg.from?.id?.toString() || 'unknown',
             chatId: msg.chat.id.toString(),
             userName: msg.from?.username || msg.from?.first_name || 'Unknown',
+            chatType: msg.chat.type,
             isGroupChat: msg.chat.type !== 'private',
             messageId: msg.message_id,
             isReplyToBot: msg.reply_to_message?.from?.username === botUsername,
@@ -208,15 +209,11 @@ async function handleMessage(msg) {
             }
         }
         else {
-            // Send reaction if recommended
+            // Емоджі реакції більше не надсилаються як повідомлення
+            // Бот тепер тільки відповідає текстом коли це дійсно потрібно
             if (response.shouldReact && response.reaction) {
-                console.log(`🎯 Sending reaction: ${response.reaction} (confidence: ${(response.confidence * 100).toFixed(1)}%)`);
-                await botInstance.sendMessage(msg.chat.id, response.reaction, {
-                    reply_to_message_id: msg.message_id,
-                    allow_sending_without_reply: true,
-                }).catch(err => {
-                    console.error('❌ Error sending reaction:', err.message);
-                });
+                console.log(`🎯 Reaction detected: ${response.reaction} (confidence: ${(response.confidence * 100).toFixed(1)}%) - но не надсилаємо як повідомлення`);
+                // Просто логуємо реакцію, але не надсилаємо її
             }
             // Send reply if recommended
             if (response.shouldReply && response.reply) {

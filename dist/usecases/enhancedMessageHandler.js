@@ -8,9 +8,10 @@ const atmosphereEnhancer_1 = require("../domain/atmosphereEnhancer");
 const memeGenerator_1 = require("../domain/memeGenerator");
 const botCapabilities_1 = require("../domain/botCapabilities");
 const potuzhnoPowerWordsDetector_1 = require("../domain/potuzhnoPowerWordsDetector");
+const moderationHandler_1 = require("./moderationHandler");
 const messageAnalyzer_1 = require("../domain/messageAnalyzer");
 class EnhancedMessageHandler {
-    constructor(contentConfig, atmosphereConfig) {
+    constructor(contentConfig, atmosphereConfig, moderationConfig) {
         this.engagementCheckInterval = null;
         this.chatEngagementCallbacks = new Map();
         this.baseHandler = new handleMessage_1.MessageHandler();
@@ -26,6 +27,7 @@ class EnhancedMessageHandler {
         this.memeGenerator = new memeGenerator_1.MemeGenerator();
         this.botCapabilities = new botCapabilities_1.BotCapabilities();
         this.powerWordsDetector = new potuzhnoPowerWordsDetector_1.PotuzhnoPowerWordsDetector();
+        this.moderationHandler = new moderationHandler_1.ModerationHandler(moderationConfig);
         console.log('🇺🇦 Enhanced Ukrainian Telegram Bot Handler initialized');
         // Start periodic atmosphere engagement checks
         this.startAtmosphereMonitoring();
@@ -34,7 +36,26 @@ class EnhancedMessageHandler {
         const startTime = Date.now();
         console.log(`🚀 Enhanced processing: "${context.text?.substring(0, 50)}..." from ${context.userName}`);
         try {
-            // Step 1: Check for inappropriate content first (highest priority)
+            // Step 1: Check for profanity/inappropriate language (highest priority)
+            const moderationAnalysis = this.moderationHandler.analyzeMessage(context.text, context.chatType || 'group', context.userId, context.chatId);
+            if (moderationAnalysis.shouldRespond) {
+                console.log(`🔴 Profanity detected: ${moderationAnalysis.responseType} response (${(moderationAnalysis.confidence * 100).toFixed(1)}%)`);
+                return {
+                    ...this.createBaseResponse(),
+                    shouldReply: true,
+                    reply: moderationAnalysis.response,
+                    confidence: moderationAnalysis.confidence,
+                    reasoning: moderationAnalysis.reasoning,
+                    moderationResponse: {
+                        type: moderationAnalysis.responseType,
+                        message: moderationAnalysis.response,
+                        confidence: moderationAnalysis.confidence,
+                        reasoning: moderationAnalysis.reasoning
+                    },
+                    responseType: 'moderation'
+                };
+            }
+            // Step 2: Check for other inappropriate content 
             const contentAnalysis = await this.contentDetector.analyzeContent(context.text, context.userId, context.userName || 'Unknown');
             if (contentAnalysis.isInappropriate) {
                 console.log(`⚠️ Inappropriate content detected: ${contentAnalysis.categories.join(', ')} (${contentAnalysis.severity})`);
@@ -323,6 +344,7 @@ class EnhancedMessageHandler {
             base: this.baseHandler.getStats(),
             nlp: this.nlpEngine.getStats(),
             content: this.contentDetector.getStats(),
+            moderation: this.moderationHandler.getStats(),
             atmosphere: {
                 activeChatCallbacks: this.chatEngagementCallbacks.size
             },
@@ -358,6 +380,28 @@ class EnhancedMessageHandler {
     }
     addCustomForbiddenWords(words) {
         this.contentDetector.addCustomForbiddenWords(words);
+    }
+    // Moderation management methods
+    updateModerationConfig(config) {
+        this.moderationHandler.updateConfig(config);
+    }
+    getModerationConfig() {
+        return this.moderationHandler.getConfig();
+    }
+    addProfanityWord(word, language) {
+        this.moderationHandler.addProfanityWord(word, language);
+    }
+    removeProfanityWord(word, language) {
+        this.moderationHandler.removeProfanityWord(word, language);
+    }
+    addModerationResponse(type, response) {
+        this.moderationHandler.addCustomResponse(type, response);
+    }
+    removeModerationResponse(type, response) {
+        this.moderationHandler.removeCustomResponse(type, response);
+    }
+    testProfanityMessage(message) {
+        return this.moderationHandler.testMessage(message);
     }
     // Bot capabilities methods
     isBotCapabilitiesRequest(context) {

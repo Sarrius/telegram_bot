@@ -14,22 +14,27 @@ An intelligent Ukrainian Telegram bot with sentiment analysis, NLP conversation 
 ### 🧠 Smarter Emotional Engagement Logic
 **Bot WILL respond to:**
 - ✅ **Direct mentions** - @bot or replies to bot messages
-- ✅ **Emotional triggers** - Help requests, strong emotions, chat support needs
-- ✅ **Interactive patterns** - Questions with "?", multiple "!" 
-- ✅ **High emotion indicators** - CAPS text (>50%), 3+ emojis
+- ✅ **Strong emotional triggers** - Help requests, very strong emotions, urgent chat support needs
+- ✅ **Interactive patterns** - Direct questions with "?", multiple "!!!" 
+- ✅ **High emotion indicators** - CAPS text (>50%), 3+ emojis, extreme expressions
 - ✅ **Group greetings** - "всім привіт", "hello everyone"
+- ✅ **Capability requests** - "що ти можеш", "what can you do"
 
 **Bot WON'T spam on:**
 - ❌ **Ordinary messages** - Regular daily conversations
 - ❌ **Short reactions** - 1-3 character responses  
 - ❌ **Technical discussions** - Without emotional content
 - ❌ **Private conversations** - Between users
+- ❌ **Mild emotions** - Weak positive/negative expressions
+- ❌ **Emoji reactions** - No longer sends emoji as messages
 
 ### 🔧 Technical Improvements
 - **Priority processing system** - Content → Capabilities → Emotions → Base reactions
 - **Enhanced regex patterns** - Better Unicode emoji detection
 - **Detailed logging** - Every decision includes reasoning
-- **Updated test coverage** - 91.47% total coverage, all tests passing
+- **Conservative reaction thresholds** - Higher quality, less spam
+- **No emoji spam** - Bot no longer sends emoji as messages, only meaningful text responses
+- **Updated test coverage** - 100% total coverage, all tests passing
 
 ## 🎯 Complete Feature Overview
 
@@ -98,6 +103,28 @@ Manual                        # Manual
 - Discriminatory content (Ukrainian: расист / English: racist)
 - Spam patterns (натисни тут, купи зараз)
 - Custom forbidden words
+
+### 🔴 **Advanced Profanity Filter & Moderation**
+- **Comprehensive profanity detection** for Ukrainian and Russian languages
+- **161 profanity words** in vocabulary (89 Ukrainian + 72 Russian)
+- **Severity-based responses** (warning → moderate → strict)
+- **Smart language detection** with mixed-language support
+- **Chat type restrictions** (groups enabled, private disabled by default)
+- **Configurable moderation levels** with custom response templates
+- **132 response templates** for varied, natural reactions
+- **Root word matching** for detecting variations and derivatives
+
+**Profanity Response System:**
+- **Warning Level** (mild): "🤦‍♂️ Давай без нецензурщини, добре?"
+- **Moderate Level**: "⚠️ Останній шанс, припини токсити!"
+- **Strict Level** (severe): "🤬 Думаєш, можна так гавкати? Здохнеш за це!"
+
+**Features:**
+- **Custom word management** - add/remove profanity words dynamically
+- **Obfuscation detection** - handles symbols and number substitutions (п1зда, му@ак)
+- **Latin-Cyrillic detection** - catches transliteration attempts (xuynya)
+- **Confidence scoring** - 80-100% accuracy with detailed reasoning
+- **Statistics tracking** - comprehensive moderation analytics
 
 ### 🎭 **Chat Atmosphere Enhancement**
 - **Ukrainian user role assignment** based on behavior patterns

@@ -5,17 +5,25 @@ import { AtmosphereEnhancer, AtmosphereConfig } from '../domain/atmosphereEnhanc
 import { MemeGenerator, MemeRequest } from '../domain/memeGenerator';
 import { BotCapabilities } from '../domain/botCapabilities';
 import { PotuzhnoPowerWordsDetector, PowerWordMatch } from '../domain/potuzhnoPowerWordsDetector';
+import { ModerationHandler, ModerationResponse, ModerationConfig } from './moderationHandler';
 import { analyzeMessage } from '../domain/messageAnalyzer';
 
 export interface EnhancedMessageContext extends MessageContext {
   isDirectMention?: boolean;
   requestsMeme?: boolean;
   memeRequest?: string;
+  chatType?: 'private' | 'group' | 'supergroup' | 'channel';
 }
 
 export interface EnhancedBotResponse extends BotResponse {
   conversationResponse?: string;
   inappropriateContentWarning?: string;
+  moderationResponse?: {
+    type: ModerationResponse['responseType'];
+    message: string;
+    confidence: number;
+    reasoning: string;
+  };
   atmosphereAction?: {
     type: 'engagement' | 'role_assignment' | 'poll';
     content: string;
@@ -31,7 +39,7 @@ export interface EnhancedBotResponse extends BotResponse {
     match: PowerWordMatch;
     motivationalResponse?: string;
   };
-  responseType: 'reaction' | 'reply' | 'conversation' | 'content_warning' | 'meme' | 'atmosphere' | 'power_word' | 'none';
+  responseType: 'reaction' | 'reply' | 'conversation' | 'content_warning' | 'moderation' | 'meme' | 'atmosphere' | 'power_word' | 'none';
 }
 
 export class EnhancedMessageHandler {
@@ -42,13 +50,15 @@ export class EnhancedMessageHandler {
   private memeGenerator: MemeGenerator;
   private botCapabilities: BotCapabilities;
   private powerWordsDetector: PotuzhnoPowerWordsDetector;
+  private moderationHandler: ModerationHandler;
   
   private engagementCheckInterval: NodeJS.Timeout | null = null;
   private chatEngagementCallbacks: Map<string, (action: any) => void> = new Map();
 
   constructor(
     contentConfig?: Partial<ContentConfiguration>,
-    atmosphereConfig?: Partial<AtmosphereConfig>
+    atmosphereConfig?: Partial<AtmosphereConfig>,
+    moderationConfig?: Partial<ModerationConfig>
   ) {
     this.baseHandler = new MessageHandler();
     this.nlpEngine = new NLPConversationEngine();
@@ -63,6 +73,7 @@ export class EnhancedMessageHandler {
     this.memeGenerator = new MemeGenerator();
     this.botCapabilities = new BotCapabilities();
     this.powerWordsDetector = new PotuzhnoPowerWordsDetector();
+    this.moderationHandler = new ModerationHandler(moderationConfig);
 
     console.log('🇺🇦 Enhanced Ukrainian Telegram Bot Handler initialized');
     // Start periodic atmosphere engagement checks
@@ -74,7 +85,33 @@ export class EnhancedMessageHandler {
     console.log(`🚀 Enhanced processing: "${context.text?.substring(0, 50)}..." from ${context.userName}`);
 
     try {
-      // Step 1: Check for inappropriate content first (highest priority)
+      // Step 1: Check for profanity/inappropriate language (highest priority)
+      const moderationAnalysis = this.moderationHandler.analyzeMessage(
+        context.text,
+        context.chatType || 'group',
+        context.userId,
+        context.chatId
+      );
+
+      if (moderationAnalysis.shouldRespond) {
+        console.log(`🔴 Profanity detected: ${moderationAnalysis.responseType} response (${(moderationAnalysis.confidence * 100).toFixed(1)}%)`);
+        return {
+          ...this.createBaseResponse(),
+          shouldReply: true,
+          reply: moderationAnalysis.response,
+          confidence: moderationAnalysis.confidence,
+          reasoning: moderationAnalysis.reasoning,
+          moderationResponse: {
+            type: moderationAnalysis.responseType,
+            message: moderationAnalysis.response,
+            confidence: moderationAnalysis.confidence,
+            reasoning: moderationAnalysis.reasoning
+          },
+          responseType: 'moderation'
+        };
+      }
+
+      // Step 2: Check for other inappropriate content 
       const contentAnalysis = await this.contentDetector.analyzeContent(
         context.text,
         context.userId,
@@ -408,6 +445,7 @@ export class EnhancedMessageHandler {
       base: this.baseHandler.getStats(),
       nlp: this.nlpEngine.getStats(),
       content: this.contentDetector.getStats(),
+      moderation: this.moderationHandler.getStats(),
       atmosphere: {
         activeChatCallbacks: this.chatEngagementCallbacks.size
       },
@@ -449,6 +487,35 @@ export class EnhancedMessageHandler {
 
   public addCustomForbiddenWords(words: string[]): void {
     this.contentDetector.addCustomForbiddenWords(words);
+  }
+
+  // Moderation management methods
+  public updateModerationConfig(config: Partial<ModerationConfig>): void {
+    this.moderationHandler.updateConfig(config);
+  }
+
+  public getModerationConfig(): ModerationConfig {
+    return this.moderationHandler.getConfig();
+  }
+
+  public addProfanityWord(word: string, language: 'ua' | 'ru'): void {
+    this.moderationHandler.addProfanityWord(word, language);
+  }
+
+  public removeProfanityWord(word: string, language: 'ua' | 'ru'): void {
+    this.moderationHandler.removeProfanityWord(word, language);
+  }
+
+  public addModerationResponse(type: 'warning' | 'moderate' | 'strict', response: string): void {
+    this.moderationHandler.addCustomResponse(type, response);
+  }
+
+  public removeModerationResponse(type: 'warning' | 'moderate' | 'strict', response: string): void {
+    this.moderationHandler.removeCustomResponse(type, response);
+  }
+
+  public testProfanityMessage(message: string): { analysis: any; response: ModerationResponse } {
+    return this.moderationHandler.testMessage(message);
   }
 
   // Bot capabilities methods
