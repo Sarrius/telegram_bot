@@ -2,6 +2,7 @@
 import { appConfig, getSafeConfig } from '../config/appConfig';
 import { EnhancedMessageHandler } from '../usecases/enhancedMessageHandler';
 import { FeatureManager } from '../config/featureManager';
+import { featureMapper } from '../config/featureMapping';
 
 export interface CLICommand {
   name: string;
@@ -32,6 +33,9 @@ export class CLIHandler {
     this.registerCommand('memory', 'Показати статистику пам\'яті', this.showMemoryStats.bind(this));
     this.registerCommand('profanity', 'Тестувати фільтр нецензурщини', this.testProfanityFilter.bind(this));
     this.registerCommand('fuzzy', 'Тестувати fuzzy matching', this.testFuzzyMatching.bind(this));
+    this.registerCommand('knowledge', 'Тестувати knowledge search', this.testKnowledgeSearch.bind(this));
+    this.registerCommand('cli-commands', 'Тестувати CLI команди в Telegram', this.testCLICommands.bind(this));
+    this.registerCommand('feature-mapping', 'Тестувати feature mapping', this.testFeatureMapping.bind(this));
     this.registerCommand('powerwords', 'Тестувати детектор потужних слів', this.testPowerWordsDetector.bind(this));
     this.registerCommand('chat', 'Почати інтерактивний чат із ботом', this.startInteractiveChat.bind(this));
     
@@ -151,21 +155,40 @@ export class CLIHandler {
     if (args.length === 0) {
       console.log(`❌ Використання: ${command} <назва_функції>`);
       console.log('💡 Введіть "feature-help" для списку доступних функцій');
+      console.log('💡 Можна використовувати як коротку назву (nlp), так і повну (nlpConversations)');
       return;
     }
 
-    const feature = args[0];
+    const inputFeature = args[0];
+    
+    // Знаходимо правильну назву функції через mapper
+    const mappedFeature = featureMapper.findFeatureByAlias(inputFeature);
+    
+    if (!mappedFeature) {
+      const availableFeatures = featureMapper.getAllFeatureManagerNames();
+      console.log(`❌ Невідома функція: "${inputFeature}"`);
+      console.log('\n🎛️ Доступні функції:');
+      availableFeatures.forEach(feature => {
+        const info = featureMapper.getFeatureInfo(feature);
+        if (info) {
+          console.log(`  ${info.emoji} ${feature} - ${info.description}`);
+        }
+      });
+      console.log('\n💡 Спробуйте: feature-help - для детального списку');
+      return;
+    }
+
     let result: string;
 
     switch (command) {
       case 'enable':
-        result = this.featureManager.enableFeature(feature as any);
+        result = this.featureManager.enableFeature(mappedFeature as any);
         break;
       case 'disable':
-        result = this.featureManager.disableFeature(feature as any);
+        result = this.featureManager.disableFeature(mappedFeature as any);
         break;
       case 'toggle':
-        result = this.featureManager.toggleFeature(feature as any);
+        result = this.featureManager.toggleFeature(mappedFeature as any);
         break;
       default:
         console.log(`❌ Невідома команда: ${command}`);
@@ -173,6 +196,12 @@ export class CLIHandler {
     }
 
     console.log(result);
+    
+    // Додаємо інформацію про мапінг
+    const featureInfo = featureMapper.getFeatureInfo(mappedFeature);
+    if (featureInfo && inputFeature !== mappedFeature) {
+      console.log(`💡 "${inputFeature}" → "${mappedFeature}" (${featureInfo.description})`);
+    }
   }
 
   // Реалізація команд
@@ -566,6 +595,245 @@ export class CLIHandler {
     }
   }
 
+  private async testKnowledgeSearch(): Promise<void> {
+    console.log('\n🔍 Тестування Knowledge Search:');
+    console.log('='.repeat(50));
+
+    try {
+      const { KnowledgeSearchHandler } = require('../usecases/knowledgeSearchHandler');
+      const searchHandler = new KnowledgeSearchHandler();
+
+      const testQueries = [
+        // Математичні запити
+        'Скільки буде 2 + 2?',
+        'What is 15 * 7?',
+        'Обчисли 100 - 37',
+        'Calculate 25 / 5',
+        
+        // Фактичні питання (українські)
+        'Хто такий Дональд Трамп?',
+        'Що таке штучний інтелект?',
+        'Коли закінчилася Друга світова війна?',
+        'Де знаходиться Ейфелева вежа?',
+        
+        // Фактичні питання (англійські) 
+        'Who is Elon Musk?',
+        'What is cryptocurrency?',
+        'When did Ukraine become independent?',
+        'Where is the Statue of Liberty?',
+        
+        // Звичайні повідомлення (не повинні спрацювати)
+        'Привіт, як справи?',
+        'Доброго ранку!',
+        'Hello everyone'
+      ];
+
+      for (let i = 0; i < testQueries.length; i++) {
+        const query = testQueries[i];
+        console.log(`\n${i + 1}. Запит: "${query}"`);
+        
+        try {
+          const result = await searchHandler.testSearch(query);
+          
+          if (result.confidence > 0) {
+            console.log(`  ✅ Знайдено відповідь (впевненість: ${Math.round(result.confidence * 100)}%)`);
+            console.log(`  🔍 Відповідь: ${result.result.substring(0, 100)}${result.result.length > 100 ? '...' : ''}`);
+            console.log(`  💭 Пояснення: ${result.reasoning}`);
+          } else {
+            console.log(`  ❌ Відповідь не знайдена`);
+            console.log(`  💭 Причина: ${result.reasoning}`);
+          }
+        } catch (error) {
+          console.log(`  ❌ Помилка: ${error}`);
+        }
+        
+        // Невелика затримка між запитами
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      // Показуємо статистику
+      console.log('\n📊 Статистика Knowledge Search:');
+      const stats = searchHandler.getStats();
+      console.log(`  - Підтримка української: ${stats.supportedQuestionTypes.ukrainian} типів`);
+      console.log(`  - Підтримка англійської: ${stats.supportedQuestionTypes.english} типів`);
+      console.log(`  - Математичні шаблони: ${stats.mathPatterns}`);
+      console.log('  - Можливості:');
+      stats.capabilities.forEach((capability: string) => {
+        console.log(`    • ${capability}`);
+      });
+
+    } catch (error) {
+      console.error('❌ Помилка тестування Knowledge Search:', error);
+    }
+  }
+
+  private testCLICommands(): void {
+    console.log('\n🎛️ Тестування CLI команд у Telegram:');
+    console.log('='.repeat(50));
+
+    try {
+      const { CLICommandHandler } = require('../usecases/cliCommandHandler');
+      const cliHandler = new CLICommandHandler();
+
+      const testCommands = [
+        // Help команди
+        'help',
+        '/help',
+        'команди',
+        'допомога',
+        'довідка',
+        'показати команди',
+        '@bot help',
+        '@bot cli help',
+        'бот допомога',
+        
+        // Status команди
+        'status',
+        '/status',
+        'статус',
+        'показати статус',
+        '@bot status',
+        
+        // Feature управління
+        'увімкни powerWords',
+        'вимкни moderation',
+        'перемкни memes',
+        'enable knowledgeSearch',
+        'disable nlp',
+        'toggle weather',
+        '@bot enable news',
+        '@bot вимкни atmosphere',
+        
+        // Features показ
+        'features',
+        'функції',
+        'показати функції',
+        '@bot features',
+        
+        // Звичайні повідомлення (не повинні спрацювати)
+        'Привіт, як справи?',
+        'Hello everyone',
+        'Що нового?',
+        'Good morning'
+      ];
+
+      testCommands.forEach((command, index) => {
+        console.log(`\n${index + 1}. Команда: "${command}"`);
+        
+        try {
+          const result = cliHandler.testCommand(command);
+          
+          if (result.detected) {
+            console.log(`  ✅ Розпізнано (впевненість: ${Math.round(result.confidence * 100)}%)`);
+            console.log(`  🎛️ Тип: CLI команда`);
+            console.log(`  📋 Відповідь: ${result.response}`);
+            console.log(`  💭 Пояснення: ${result.reasoning}`);
+          } else {
+            console.log(`  ❌ Не розпізнано як CLI команда`);
+            console.log(`  💭 Причина: ${result.reasoning}`);
+          }
+        } catch (error) {
+          console.log(`  ❌ Помилка: ${error}`);
+        }
+      });
+
+      // Показуємо статистику
+      console.log('\n📊 Статистика CLI Commands:');
+      const stats = cliHandler.getStats();
+      console.log(`  - Help patterns: ${stats.helpPatterns}`);
+      console.log(`  - Status patterns: ${stats.statusPatterns}`);
+      console.log(`  - Feature patterns: ${stats.featurePatterns}`);
+      console.log(`  - Підтримувані команди: ${stats.supportedCommands.join(', ')}`);
+      console.log(`  - Мови: ${stats.languages.join(', ')}`);
+      console.log('  - Можливості:');
+      stats.capabilities.forEach((capability: string) => {
+        console.log(`    • ${capability}`);
+      });
+
+    } catch (error) {
+      console.error('❌ Помилка тестування CLI Commands:', error);
+    }
+  }
+
+  private testFeatureMapping(): void {
+    console.log('\n🔀 Тестування Feature Mapping:');
+    console.log('='.repeat(50));
+
+    try {
+      const testInputs = [
+        // AppConfig назви
+        'nlpConversations',
+        'contentModeration',
+        'atmosphereEnhancement',
+        'memeGeneration',
+        'sentimentReactions',
+        'userMemory',
+        'profanityFilter',
+        'newsWeatherMonitoring',
+        'learningSystem',
+        
+        // FeatureManager назви
+        'nlp',
+        'moderation',
+        'atmosphere',
+        'memes',
+        'powerWords',
+        'memory',
+        'news',
+        'weather',
+        'knowledgeSearch',
+        
+        // Аліаси
+        'conversations',
+        'chat',
+        'модерація',
+        'content',
+        'атмосфера',
+        'меми',
+        'пам\'ять',
+        'нецензурщина',
+        'новини',
+        'погода',
+        'пошук',
+        'знання',
+        
+        // Невідомі
+        'unknownFeature',
+        'тест',
+        'hello'
+      ];
+
+      testInputs.forEach((input, index) => {
+        console.log(`\n${index + 1}. Вхід: "${input}"`);
+        
+        const mapped = featureMapper.findFeatureByAlias(input);
+        if (mapped) {
+          const info = featureMapper.getFeatureInfo(mapped);
+          console.log(`  ✅ Знайдено: ${mapped}`);
+          if (info) {
+            console.log(`  ${info.emoji} ${info.description}`);
+            if (info.appConfigName) {
+              console.log(`  📋 AppConfig: ${info.appConfigName}`);
+            }
+          }
+        } else {
+          console.log(`  ❌ Не знайдено`);
+        }
+      });
+
+      // Статистика
+      console.log('\n📊 Статистика Feature Mapper:');
+      const stats = featureMapper.getStats();
+      console.log(`  - Всього мапінгів: ${stats.totalMappings}`);
+      console.log(`  - Тільки FeatureManager: ${stats.featureManagerOnly}`);
+      console.log(`  - Загалом функцій: ${stats.totalFeatures}`);
+      console.log(`  - Доступні аліаси: ${stats.availableAliases.join(', ')}`);
+
+    } catch (error) {
+      console.error('❌ Помилка тестування Feature Mapping:', error);
+    }
+  }
+
   private exit(): void {
     console.log('\n👋 До побачення!');
     process.exit(0);
@@ -608,6 +876,7 @@ export class CLIHandler {
 
   private showFeatureHelp(): void {
     console.log(this.featureManager.getFeatureHelp());
+    console.log('\n' + featureMapper.getFormattedFeaturesList());
   }
 
   private async startInteractiveChat(): Promise<void> {

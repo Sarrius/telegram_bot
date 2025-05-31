@@ -9,6 +9,7 @@ export interface FeatureState {
   nlp: boolean;
   atmosphere: boolean;
   profanityFilter: boolean;
+  knowledgeSearch: boolean;
 }
 
 export interface FeatureConfig {
@@ -27,7 +28,8 @@ export class FeatureManager {
     memory: true,
     nlp: true,
     atmosphere: true,
-    profanityFilter: true
+    profanityFilter: true,
+    knowledgeSearch: true
   };
   
   private constructor() {
@@ -117,7 +119,8 @@ export class FeatureManager {
       memory: true,
       nlp: true,
       atmosphere: true,
-      profanityFilter: true
+      profanityFilter: true,
+      knowledgeSearch: true
     };
     this.saveConfig();
     return '🔄 Конфігурацію скинуто до стандартних налаштувань';
@@ -175,6 +178,7 @@ export class FeatureManager {
 💬 **nlp**            - NLP розмови та розуміння контексту
 🌟 **atmosphere**     - Підвищення атмосфери у чатах
 🚫 **profanityFilter** - Фільтрація нецензурної лексики
+🔍 **knowledgeSearch** - Інтелектуальний пошук і відповіді на питання
 
 📋 **Команди управління:**
   enable <функція>     - увімкнути функцію

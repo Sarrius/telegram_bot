@@ -4,30 +4,35 @@ An intelligent Ukrainian Telegram bot with sentiment analysis, NLP conversation 
 
 ## 🆕 Latest Improvements (Version 2.4)
 
-### 🎛️ **Feature Management System**
+### 🎛️ **Standardized CLI Command System**
+- **English-only CLI commands** - Professional standardized command interface
+- **Terminal and Telegram CLI** - Same commands work in both console and chat
+- **Feature naming consistency** - Unified feature mapping between different systems
 - **Real-time feature control** - Enable/disable any bot function on-the-fly
 - **9 controllable features** - powerWords, moderation, news, weather, memes, memory, nlp, atmosphere, profanityFilter
-- **CLI interface** - Complete command-line management with interactive commands
-- **Console-based control** - Manage features directly from terminal without Telegram
-- **Feature status display** - Real-time status overview with emoji indicators
-- **Persistent storage** - Feature states saved in runtime environment
-- **Centralized configuration** - Single point of control for all bot functionality
-- **Enhanced help system** - Dual-column display showing commands and feature status
+- **Interactive CLI help** - Complete command-line management with status display
+- **Bot mention support** - Use @bot prefix for Telegram CLI commands
+- **Ukrainian responses** - CLI responses display in Ukrainian while commands stay English
+- **Centralized configuration** - FeatureMapper resolves name conflicts automatically
 
 **Feature Management Commands:**
 ```bash
 # CLI Mode
 npm run cli                    # Start interactive CLI mode
 
-# Feature Control
-enable powerWords             # Enable power word reactions
-disable moderation           # Disable content moderation  
-toggle memes                 # Toggle meme generation
-status                       # Show all feature statuses
-enable-all                   # Enable all features
-disable-all                  # Disable all features
-reset-features               # Reset to default configuration
-feature-help                 # Show detailed feature guide
+# English CLI Commands (standardized)
+help                          # Show available commands and feature status
+status                        # Show all feature statuses
+features                      # Detailed features information
+enable <feature>              # Enable specific feature (e.g., enable powerWords)
+disable <feature>             # Disable specific feature (e.g., disable moderation)
+toggle <feature>              # Toggle specific feature (e.g., toggle memes)
+
+# CLI Commands via Telegram Bot
+@bot help                     # Get CLI help in Telegram chat
+@bot status                   # Show feature status in chat
+@bot enable powerWords        # Enable features via bot mention
+@bot disable moderation       # Disable features via bot mention
 
 # Interactive Chat Testing
 chat                         # Start bot chat simulation
@@ -44,9 +49,17 @@ chat                         # Start bot chat simulation
 - 🌟 **atmosphere** - Chat atmosphere enhancement
 - 🚫 **profanityFilter** - Profanity detection and filtering
 
+### 🔄 **CLI vs Natural Language Separation**
+- **Technical CLI commands** - English only (`help`, `status`, `enable`, `disable`)
+- **Natural conversation** - Ukrainian language for user interaction
+- **Clear separation** - Ukrainian words like "команди", "допомога" are NOT CLI commands
+- **Professional approach** - CLI follows international standards while keeping Ukrainian UX
+
 ### 🎯 **100% Test Coverage Achievement**
-- **657/657 tests passing** - Full test suite completion ✅
+- **711/711 tests passing** - Full test suite completion ✅
+- **24 test suites** covering domain logic, use cases, and integration
 - **Comprehensive test coverage** across all modules and features
+- **CLI command testing** - English-only command detection verified
 - **Integration tests** for complex workflows and user interactions
 - **Robust error handling** verified through extensive edge case testing
 - **Ukrainian language processing** fully tested with variety of inputs
@@ -54,7 +67,7 @@ chat                         # Start bot chat simulation
 - **Memory leak prevention** verified through resource management tests
 
 ### 🧪 **Testing Infrastructure**
-- **21 test suites** covering domain logic, use cases, and integration
+- **24 test suites** covering domain logic, use cases, and integration
 - **Unit tests** for individual components and functions
 - **Integration tests** for multi-component workflows
 - **Edge case coverage** for error handling and boundary conditions
