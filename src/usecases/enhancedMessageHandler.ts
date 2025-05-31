@@ -113,9 +113,9 @@ export class EnhancedMessageHandler {
     this.userMemory = new UserMemory();
     this.featureManager = FeatureManager.getInstance();
     this.knowledgeSearchHandler = new KnowledgeSearchHandler();
-    this.cliCommandHandler = new CLICommandHandler();
     this.currencyHandler = new CurrencyHandler();
     this.newsWeatherHandler = newsWeatherHandler || null;
+    this.cliCommandHandler = new CLICommandHandler(this.newsWeatherHandler || undefined);
 
     console.log('🇺🇦 Enhanced Ukrainian Telegram Bot Handler initialized with memory system');
     // Start periodic atmosphere engagement checks
@@ -286,7 +286,7 @@ export class EnhancedMessageHandler {
       }
 
       // Step 5: Check for CLI commands (help, status, feature management) - BEFORE conversation requests
-      const cliResponse = this.cliCommandHandler.handleMessage(
+      const cliResponse = await this.cliCommandHandler.handleMessage(
         context.text,
         context.chatType || 'group',
         context.userId,
