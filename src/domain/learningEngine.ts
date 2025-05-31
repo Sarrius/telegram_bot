@@ -163,6 +163,7 @@ export class LearningEngine {
       this.recentPatterns.shift();
     }
 
+    console.log(`🔍 Debug: Generated pattern ID: ${pattern.id}`);
     return pattern.id;
   }
 
@@ -344,7 +345,7 @@ export class LearningEngine {
   }
 
   private generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
   }
 
   private categorizeReaction(botReaction: BotReaction): string {

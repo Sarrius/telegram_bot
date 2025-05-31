@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const node_telegram_bot_api_1 = __importDefault(require("node-telegram-bot-api"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const http_1 = __importDefault(require("http"));
-const handleMessage_1 = require("./usecases/handleMessage");
+const enhancedMessageHandler_1 = require("./usecases/enhancedMessageHandler");
 // Load environment variables first
 dotenv_1.default.config();
 // Get environment variables
@@ -42,6 +42,7 @@ let botUsername = '';
 let retryCount = 0;
 let maxRetries = 3;
 let isRetrying = false;
+let messageHandler;
 server.listen(port, () => {
     console.log(`✅ HTTP server listening on port ${port}`);
     console.log('✅ Health check endpoint available at /health');
@@ -63,6 +64,9 @@ function initializeBot() {
             console.log('⚠️ Bot will not start, but health check server remains active');
             return;
         }
+        // Initialize the enhanced message handler with all features
+        messageHandler = new enhancedMessageHandler_1.EnhancedMessageHandler();
+        console.log('🧠 Enhanced message handler initialized with NLP, content detection, and meme generation');
         // Create bot instance with simple polling
         botInstance = new node_telegram_bot_api_1.default(token, {
             polling: {
@@ -155,30 +159,96 @@ function restartPollingWithBackoff() {
         isRetrying = false;
     }
 }
-function handleMessage(msg) {
+async function handleMessage(msg) {
     try {
-        if (!msg.text || !msg.chat || msg.chat.type === 'private' || !botInstance) {
+        if (!msg.text || !msg.chat || msg.chat.type === 'private' || !botInstance || !messageHandler) {
             return;
         }
         console.log(`📨 Message from ${msg.chat.title || msg.chat.id}: ${msg.text.substring(0, 50)}...`);
-        // React with emoji to every message
-        const reaction = (0, handleMessage_1.getReaction)(msg.text);
-        botInstance.sendMessage(msg.chat.id, reaction, {
-            reply_to_message_id: msg.message_id,
-            allow_sending_without_reply: true,
-        }).catch(err => {
-            console.error('❌ Error sending reaction:', err.message);
-        });
-        // If bot is mentioned, reply
-        if (botUsername && msg.text.toLowerCase().includes(`@${botUsername.toLowerCase()}`)) {
-            const reply = (0, handleMessage_1.getReply)(msg.text);
-            botInstance.sendMessage(msg.chat.id, reply, {
-                reply_to_message_id: msg.message_id,
-                allow_sending_without_reply: true,
-            }).catch(err => {
-                console.error('❌ Error sending reply:', err.message);
+        // Create enhanced message context
+        const context = {
+            text: msg.text,
+            userId: msg.from?.id?.toString() || 'unknown',
+            chatId: msg.chat.id.toString(),
+            userName: msg.from?.username || msg.from?.first_name || 'Unknown',
+            isGroupChat: msg.chat.type !== 'private',
+            messageId: msg.message_id,
+            isReplyToBot: msg.reply_to_message?.from?.username === botUsername,
+            mentionsBot: botUsername ? msg.text.toLowerCase().includes(`@${botUsername.toLowerCase()}`) : false,
+            isDirectMention: botUsername ? msg.text.toLowerCase().includes(`@${botUsername.toLowerCase()}`) : false,
+            requestsMeme: msg.text.toLowerCase().includes('meme'),
+            memeRequest: msg.text.toLowerCase().includes('meme') ? msg.text : undefined
+        };
+        // Use the enhanced message handler
+        const response = await messageHandler.handleMessage(context);
+        // Handle different response types
+        if (response.responseType === 'meme' && response.memeResponse) {
+            console.log(`🎭 Sending meme: ${response.memeResponse.attribution}`);
+            if (response.memeResponse.type === 'image' && response.memeResponse.content instanceof Buffer) {
+                await botInstance.sendPhoto(msg.chat.id, response.memeResponse.content, {
+                    caption: response.reply || 'Here\'s your meme! 🎭',
+                    reply_to_message_id: msg.message_id,
+                }).catch(err => {
+                    console.error('❌ Error sending meme image:', err.message);
+                });
+            }
+            else if (response.memeResponse.type === 'url') {
+                await botInstance.sendMessage(msg.chat.id, `${response.reply}\n${response.memeResponse.content}`, {
+                    reply_to_message_id: msg.message_id,
+                }).catch(err => {
+                    console.error('❌ Error sending meme URL:', err.message);
+                });
+            }
+            else if (response.memeResponse.type === 'text') {
+                await botInstance.sendMessage(msg.chat.id, `${response.memeResponse.content}`, {
+                    reply_to_message_id: msg.message_id,
+                }).catch(err => {
+                    console.error('❌ Error sending text meme:', err.message);
+                });
+            }
+        }
+        else {
+            // Send reaction if recommended
+            if (response.shouldReact && response.reaction) {
+                console.log(`🎯 Sending reaction: ${response.reaction} (confidence: ${(response.confidence * 100).toFixed(1)}%)`);
+                await botInstance.sendMessage(msg.chat.id, response.reaction, {
+                    reply_to_message_id: msg.message_id,
+                    allow_sending_without_reply: true,
+                }).catch(err => {
+                    console.error('❌ Error sending reaction:', err.message);
+                });
+            }
+            // Send reply if recommended
+            if (response.shouldReply && response.reply) {
+                console.log(`💬 Sending reply: ${response.reply.substring(0, 50)}... (confidence: ${(response.confidence * 100).toFixed(1)}%)`);
+                await botInstance.sendMessage(msg.chat.id, response.reply, {
+                    reply_to_message_id: msg.message_id,
+                    allow_sending_without_reply: true,
+                }).catch(err => {
+                    console.error('❌ Error sending reply:', err.message);
+                });
+            }
+        }
+        // Register atmosphere engagement callback if it's a group chat
+        if (msg.chat.type !== 'private') {
+            messageHandler.registerChatEngagementCallback(msg.chat.id.toString(), async (action) => {
+                console.log(`🎯 Atmosphere engagement: ${action.type} - ${action.content}`);
+                if (action.type === 'poll' && action.pollOptions) {
+                    await botInstance.sendPoll(msg.chat.id, action.content, action.pollOptions, {
+                        is_anonymous: false,
+                    }).catch(err => {
+                        console.error('❌ Error sending poll:', err.message);
+                    });
+                }
+                else {
+                    await botInstance.sendMessage(msg.chat.id, action.content).catch(err => {
+                        console.error('❌ Error sending atmosphere message:', err.message);
+                    });
+                }
             });
         }
+        // Log the decision reasoning
+        console.log(`🧠 Bot decision (${response.responseType}): ${response.reasoning}`);
     }
     catch (error) {
         console.error('❌ Error handling message:', error);

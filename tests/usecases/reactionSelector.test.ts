@@ -327,7 +327,9 @@ describe('ReactionSelector', () => {
     let realLearningEngine: LearningEngine;
 
     beforeEach(() => {
-      realLearningEngine = new LearningEngine();
+      // Get the actual (non-mocked) LearningEngine
+      const { LearningEngine: ActualLearningEngine } = jest.requireActual('../../src/domain/learningEngine');
+      realLearningEngine = new ActualLearningEngine();
       realReactionSelector = new ReactionSelector(realLearningEngine, fuzzyMatcher);
     });
 

@@ -26,7 +26,7 @@ export class ReactionSelector {
 
   // Emoji mappings for different reaction types
   private sarcasticEmojis = {
-    overly_positive: ['😂', '🙄', '😏', '🤭', '😅'],
+    overly_positive: ['😂', '🙄', '🙃', '🤭', '😅'],
     motivational: ['🤔', '😏', '🙃', '😂'],
     positive: ['😂', '🤪', '🙃', '😜']
   };
@@ -59,10 +59,33 @@ export class ReactionSelector {
       context.chatId
     );
 
+    console.log(`🔍 Debug: prediction =`, prediction);
+
     // Safety check for prediction
     if (!prediction || !prediction.recommendedType) {
       console.warn('⚠️ Learning engine returned invalid prediction, using fallback');
-      return this.createNeutralReaction(context, 0.3);
+      const fallbackReaction = this.createNeutralReaction(context, 0.3);
+      
+      // Still record this reaction for learning even if it's a fallback
+      const botReaction: BotReaction = {
+        type: fallbackReaction.type,
+        content: fallbackReaction.content,
+        reasoning: fallbackReaction.reasoning,
+        confidence: fallbackReaction.confidence,
+        timestamp: new Date()
+      };
+
+      const patternId = this.learningEngine.recordBotReaction(
+        context.messageContent,
+        context.sentiment,
+        context.keywords,
+        context.userId,
+        context.chatId,
+        botReaction
+      );
+
+      fallbackReaction.learningPatternId = patternId;
+      return fallbackReaction;
     }
 
     console.log(`🧠 Learning prediction: ${prediction.recommendedType} (${(prediction.confidence * 100).toFixed(1)}% confidence)`);
@@ -102,6 +125,7 @@ export class ReactionSelector {
       botReaction
     );
 
+    console.log(`🔍 Debug: patternId from learning engine: ${patternId}`);
     reaction.learningPatternId = patternId;
 
     console.log(`✅ Selected: ${reaction.type} "${reaction.content}" (${reaction.reasoning})`);
@@ -139,8 +163,7 @@ export class ReactionSelector {
       type: 'emoji',
       content: selectedEmoji,
       reasoning: `Sarcastic reaction to ${sentiment} message (intensity: ${intensity})`,
-      confidence: baseConfidence * this.getIntensityMultiplier(intensity),
-      learningPatternId: undefined
+      confidence: baseConfidence * this.getIntensityMultiplier(intensity)
     };
   }
 
@@ -174,8 +197,7 @@ export class ReactionSelector {
       type: 'emoji',
       content: selectedEmoji,
       reasoning: `Supportive reaction to ${sentiment} message (intensity: ${intensity})`,
-      confidence: baseConfidence * this.getIntensityMultiplier(intensity),
-      learningPatternId: undefined
+      confidence: baseConfidence * this.getIntensityMultiplier(intensity)
     };
   }
 
@@ -189,8 +211,7 @@ export class ReactionSelector {
       type: 'emoji',
       content: randomEmoji,
       reasoning: `Neutral reaction to ${context.sentiment} message`,
-      confidence: baseConfidence * 0.7, // Lower confidence for neutral
-      learningPatternId: undefined
+      confidence: baseConfidence * 0.7 // Lower confidence for neutral
     };
   }
 
@@ -202,8 +223,7 @@ export class ReactionSelector {
       type: 'ignore',
       content: '',
       reasoning: `Ignoring ${context.sentiment} message (learned pattern suggests no reaction)`,
-      confidence: baseConfidence,
-      learningPatternId: undefined
+      confidence: baseConfidence
     };
   }
 
