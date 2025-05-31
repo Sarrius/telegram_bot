@@ -246,10 +246,11 @@ async function handleMessage(msg: any) {
         console.log(`🎯 Adding reaction: ${response.reaction} (confidence: ${(response.confidence * 100).toFixed(1)}%)`);
         try {
           // TypeScript типи для setMessageReaction ще не включені в node-telegram-bot-api
-          // Викликаємо API безпосередньо
-          await (botInstance as any).setMessageReaction(msg.chat.id, msg.message_id, [
-            { type: 'emoji', emoji: response.reaction }
-          ]);
+          // Викликаємо API безпосередньо з правильним форматом
+          const reaction = [{ type: 'emoji', emoji: response.reaction }];
+          await (botInstance as any).setMessageReaction(msg.chat.id, msg.message_id, {
+            reaction: JSON.stringify(reaction)
+          });
           console.log(`✅ Reaction ${response.reaction} added successfully`);
         } catch (err: any) {
           console.error('❌ Error adding reaction:', err.message);
