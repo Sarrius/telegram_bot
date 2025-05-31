@@ -134,6 +134,23 @@ class MemeGenerator {
         const suggestions = language === 'uk' ? this.ukrainianMemeSuggestions : this.memeSuggestions;
         // Check for Ukrainian-specific keywords first
         if (language === 'uk') {
+            // Enhanced Ukrainian keyword matching with flexible patterns
+            if (lowerMessage.includes('робот') || lowerMessage.includes('роботі')) {
+                return this.ukrainianMemeSuggestions['робота'];
+            }
+            if (lowerMessage.includes('їж') || lowerMessage.includes('хочу їжу')) {
+                return this.ukrainianMemeSuggestions['їжа'];
+            }
+            if (lowerMessage.includes('україн') || lowerMessage.includes('слава україні')) {
+                return this.ukrainianMemeSuggestions['україна'];
+            }
+            if (lowerMessage.includes('кав')) {
+                return this.ukrainianMemeSuggestions['кава'];
+            }
+            if (lowerMessage.includes('понеділ')) {
+                return this.ukrainianMemeSuggestions['понеділок'];
+            }
+            // Exact keyword matches as fallback
             for (const [keyword, meme] of Object.entries(suggestions)) {
                 if (lowerMessage.includes(keyword)) {
                     return meme;
@@ -144,7 +161,7 @@ class MemeGenerator {
                 return { topText: "Коли готуєш українську їжу", bottomText: "Душа співає", language: 'uk' };
             }
             if (lowerMessage.includes('україна') || lowerMessage.includes('🇺🇦')) {
-                return { topText: "Коли згадують Україну", bottomText: "Серце радіє", language: 'uk' };
+                return { topText: "Серце радіє", bottomText: "Коли згадують Україну", language: 'uk' };
             }
         }
         else {
@@ -214,11 +231,15 @@ class MemeGenerator {
     // Quick meme generation with Ukrainian support
     async generateQuickMeme(text, language = 'uk') {
         const shortText = text.length > 50 ? text.substring(0, 47) + '...' : text;
-        return await this.generateMeme({
-            topText: shortText,
-            bottomText: language === 'uk' ? 'Класичний мем момент 😄' : 'Classic meme moment 😄',
+        const memeText = language === 'uk'
+            ? `Всі: ${shortText}\nЯ: Ну, насправді... мем момент`
+            : `Everyone: ${shortText}\nMe: Well, actually... meme moment`;
+        return {
+            success: true,
+            text: memeText,
+            attribution: language === 'uk' ? 'Згенеровано українським мем-генератором' : 'Generated with Ukrainian meme engine',
             language
-        });
+        };
     }
     // Get meme statistics
     getStats() {

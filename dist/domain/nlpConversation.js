@@ -13,7 +13,7 @@ class NLPConversationEngine {
             questions: ['що', 'як', 'коли', 'де', 'чому', 'навіщо', 'скільки'],
             positiveWords: ['добре', 'чудово', 'супер', 'класно', 'відмінно', 'круто', 'прекрасно'],
             negativeWords: ['погано', 'жахливо', 'сумно', 'болить', 'втомився', 'складно'],
-            jokes: ['жарт', 'анекдот', 'смішно', 'розсміши', 'весело'],
+            jokes: ['жарт', 'анекдот', 'смішно', 'розсміши', 'весело', 'розкажи жарт', 'розкажи'],
             help: ['допомога', 'допоможи', 'як', 'можеш', 'підкажи'],
             farewell: ['па', 'до побачення', 'бувай', 'увидимся', 'прощай']
         };
@@ -59,10 +59,11 @@ class NLPConversationEngine {
         const lowerText = text.toLowerCase();
         // Check for Ukrainian specific characters and words
         const ukrainianChars = /[іїєґ]/g;
-        const ukrainianWords = ['що', 'як', 'коли', 'де', 'чому', 'і', 'в', 'на', 'з', 'для', 'до', 'від', 'по', 'під', 'над'];
+        const ukrainianWords = ['що', 'як', 'коли', 'де', 'чому', 'і', 'в', 'на', 'з', 'для', 'до', 'від', 'по', 'під', 'над', 'це', 'таке', 'мені', 'тебе', 'його'];
         const hasUkrainianChars = ukrainianChars.test(lowerText);
         const ukrainianWordCount = ukrainianWords.filter(word => lowerText.includes(word)).length;
-        if (hasUkrainianChars || ukrainianWordCount >= 2) {
+        // Lower threshold for Ukrainian detection
+        if (hasUkrainianChars || ukrainianWordCount >= 1) {
             return 'uk';
         }
         // Check for mixed language (both Ukrainian and English words)
@@ -76,9 +77,14 @@ class NLPConversationEngine {
     detectIntent(message, language) {
         const lowerMessage = message.toLowerCase();
         if (language === 'uk' || language === 'mixed') {
-            // Ukrainian intent detection
+            // Ukrainian intent detection - check specific patterns first
             if (this.ukrainianPatterns.greetings.some(word => lowerMessage.includes(word))) {
                 return 'greeting';
+            }
+            // Check for story request first (more specific than jokes)
+            if (lowerMessage.includes('розкажи історію') || lowerMessage.includes('історія') ||
+                (lowerMessage.includes('розкажи') && lowerMessage.includes('історі'))) {
+                return 'story_request';
             }
             if (this.ukrainianPatterns.jokes.some(word => lowerMessage.includes(word))) {
                 return 'joke_request';
@@ -91,9 +97,6 @@ class NLPConversationEngine {
             }
             if (this.ukrainianPatterns.negativeWords.some(word => lowerMessage.includes(word))) {
                 return 'support_needed';
-            }
-            if (lowerMessage.includes('розкажи') || lowerMessage.includes('історія')) {
-                return 'story_request';
             }
         }
         // English fallback

@@ -5,7 +5,7 @@ class ReactionSelector {
     constructor(learningEngine, vocabularyMatcher) {
         // Emoji mappings for different reaction types
         this.sarcasticEmojis = {
-            overly_positive: ['😂', '🙄', '😏', '🤭', '😅'],
+            overly_positive: ['😂', '🙄', '🙃', '🤭', '😅'],
             motivational: ['🤔', '😏', '🙃', '😂'],
             positive: ['😂', '🤪', '🙃', '😜']
         };
@@ -25,10 +25,22 @@ class ReactionSelector {
         console.log(`🎯 Selecting reaction for: "${context.messageContent}" (${context.sentiment})`);
         // Get learning-based recommendation
         const prediction = await this.learningEngine.predictBestReaction(context.messageContent, context.sentiment, context.keywords, context.userId, context.chatId);
+        console.log(`🔍 Debug: prediction =`, prediction);
         // Safety check for prediction
         if (!prediction || !prediction.recommendedType) {
             console.warn('⚠️ Learning engine returned invalid prediction, using fallback');
-            return this.createNeutralReaction(context, 0.3);
+            const fallbackReaction = this.createNeutralReaction(context, 0.3);
+            // Still record this reaction for learning even if it's a fallback
+            const botReaction = {
+                type: fallbackReaction.type,
+                content: fallbackReaction.content,
+                reasoning: fallbackReaction.reasoning,
+                confidence: fallbackReaction.confidence,
+                timestamp: new Date()
+            };
+            const patternId = this.learningEngine.recordBotReaction(context.messageContent, context.sentiment, context.keywords, context.userId, context.chatId, botReaction);
+            fallbackReaction.learningPatternId = patternId;
+            return fallbackReaction;
         }
         console.log(`🧠 Learning prediction: ${prediction.recommendedType} (${(prediction.confidence * 100).toFixed(1)}% confidence)`);
         // Choose reaction based on prediction
@@ -55,6 +67,7 @@ class ReactionSelector {
             timestamp: new Date()
         };
         const patternId = this.learningEngine.recordBotReaction(context.messageContent, context.sentiment, context.keywords, context.userId, context.chatId, botReaction);
+        console.log(`🔍 Debug: patternId from learning engine: ${patternId}`);
         reaction.learningPatternId = patternId;
         console.log(`✅ Selected: ${reaction.type} "${reaction.content}" (${reaction.reasoning})`);
         return reaction;
@@ -90,8 +103,7 @@ class ReactionSelector {
             type: 'emoji',
             content: selectedEmoji,
             reasoning: `Sarcastic reaction to ${sentiment} message (intensity: ${intensity})`,
-            confidence: baseConfidence * this.getIntensityMultiplier(intensity),
-            learningPatternId: undefined
+            confidence: baseConfidence * this.getIntensityMultiplier(intensity)
         };
     }
     /**
@@ -124,8 +136,7 @@ class ReactionSelector {
             type: 'emoji',
             content: selectedEmoji,
             reasoning: `Supportive reaction to ${sentiment} message (intensity: ${intensity})`,
-            confidence: baseConfidence * this.getIntensityMultiplier(intensity),
-            learningPatternId: undefined
+            confidence: baseConfidence * this.getIntensityMultiplier(intensity)
         };
     }
     /**
@@ -137,8 +148,7 @@ class ReactionSelector {
             type: 'emoji',
             content: randomEmoji,
             reasoning: `Neutral reaction to ${context.sentiment} message`,
-            confidence: baseConfidence * 0.7, // Lower confidence for neutral
-            learningPatternId: undefined
+            confidence: baseConfidence * 0.7 // Lower confidence for neutral
         };
     }
     /**
@@ -149,8 +159,7 @@ class ReactionSelector {
             type: 'ignore',
             content: '',
             reasoning: `Ignoring ${context.sentiment} message (learned pattern suggests no reaction)`,
-            confidence: baseConfidence,
-            learningPatternId: undefined
+            confidence: baseConfidence
         };
     }
     /**

@@ -77,6 +77,7 @@ class LearningEngine {
         if (this.recentPatterns.length > this.maxRecentPatterns) {
             this.recentPatterns.shift();
         }
+        console.log(`🔍 Debug: Generated pattern ID: ${pattern.id}`);
         return pattern.id;
     }
     /**
@@ -223,7 +224,7 @@ class LearningEngine {
             .join(' ');
     }
     generateId() {
-        return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        return Date.now().toString(36) + Math.random().toString(36).substring(2);
     }
     categorizeReaction(botReaction) {
         // Categorize bot reactions for learning

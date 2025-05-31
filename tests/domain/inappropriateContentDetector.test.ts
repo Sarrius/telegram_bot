@@ -345,7 +345,7 @@ describe('InappropriateContentDetector', () => {
     });
 
     it('should handle concurrent analysis', async () => {
-      const promises = [];
+      const promises: Promise<any>[] = [];
       
       for (let i = 0; i < 10; i++) {
         promises.push(detector.analyzeContent(`дурень ${i}`, `user${i}`, `TestUser${i}`));

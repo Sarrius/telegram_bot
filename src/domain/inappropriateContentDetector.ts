@@ -228,6 +228,14 @@ export class InappropriateContentDetector {
       return 'uk';
     }
     
+    // Check for English indicators
+    const englishWords = ['the', 'and', 'you', 'are', 'that', 'this', 'with', 'have', 'for', 'not'];
+    const englishWordCount = englishWords.filter(word => lowerText.includes(word)).length;
+    
+    if (englishWordCount >= 1) {
+      return 'en';
+    }
+    
     return this.config.primaryLanguage;
   }
 
@@ -238,7 +246,7 @@ export class InappropriateContentDetector {
     for (const word of words) {
       if (message.includes(word)) {
         matches++;
-        score += 0.2;
+        score += 0.4; // Increased from 0.2 to make single matches more significant
       }
     }
 

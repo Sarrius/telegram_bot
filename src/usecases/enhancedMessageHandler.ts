@@ -93,6 +93,17 @@ export class EnhancedMessageHandler {
         sentiment
       );
 
+      // Step 2.1: Always update NLP statistics for tracking purposes
+      const nlpContext: ConversationContext = {
+        userId: context.userId,
+        userName: context.userName || 'Unknown',
+        chatHistory: [],
+        currentMessage: context.text,
+        chatTopic: this.extractChatTopic(context.text)
+      };
+      // Generate response to update user statistics (we may not use the response)
+      await this.nlpEngine.generateConversationalResponse(nlpContext);
+
       // Step 3: Check for direct conversation requests
       if (this.isDirectConversationRequest(context)) {
         const conversationResponse = await this.handleConversation(context);

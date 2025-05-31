@@ -47,6 +47,16 @@ class EnhancedMessageHandler {
             // Step 2: Update atmosphere tracking
             const sentiment = this.extractSentiment(context.text);
             this.atmosphereEnhancer.updateChatActivity(context.chatId, context.userId, context.userName || 'Unknown', context.text, sentiment);
+            // Step 2.1: Always update NLP statistics for tracking purposes
+            const nlpContext = {
+                userId: context.userId,
+                userName: context.userName || 'Unknown',
+                chatHistory: [],
+                currentMessage: context.text,
+                chatTopic: this.extractChatTopic(context.text)
+            };
+            // Generate response to update user statistics (we may not use the response)
+            await this.nlpEngine.generateConversationalResponse(nlpContext);
             // Step 3: Check for direct conversation requests
             if (this.isDirectConversationRequest(context)) {
                 const conversationResponse = await this.handleConversation(context);

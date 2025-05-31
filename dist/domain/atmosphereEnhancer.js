@@ -139,7 +139,14 @@ class AtmosphereEnhancer {
         if (hasUkrainianChars || ukrainianWordCount >= 1) {
             return 'uk';
         }
-        return 'en';
+        // Check for English indicators
+        const englishWords = ['the', 'and', 'you', 'are', 'that', 'this', 'with', 'have', 'for', 'not'];
+        const englishWordCount = englishWords.filter(word => lowerText.includes(word)).length;
+        if (englishWordCount >= 1) {
+            return 'en';
+        }
+        // Fallback to primary language from config
+        return this.config.primaryLanguage;
     }
     async generateEngagementAction(chatId) {
         const activity = this.chatActivities.get(chatId);
@@ -219,8 +226,8 @@ class AtmosphereEnhancer {
         const lowerMessage = message.toLowerCase();
         const topics = [];
         const ukrainianTopicKeywords = {
-            food: ['їжа', 'їсти', 'голодний', 'ресторан', 'готувати', 'рецепт', 'смачно', 'піца', 'бургер'],
-            music: ['музика', 'пісня', 'слухати', 'гурт', 'альбом', 'концерт', 'співати'],
+            food: ['їжа', 'їжу', 'їсти', 'голодний', 'ресторан', 'готувати', 'рецепт', 'смачно', 'піца', 'бургер'],
+            music: ['музика', 'музику', 'пісня', 'слухати', 'гурт', 'альбом', 'концерт', 'співати'],
             movies: ['фільм', 'кіно', 'дивитися', 'кінотеатр', 'нетфлікс', 'серіал', 'шоу'],
             sports: ['гра', 'грати', 'команда', 'виграти', 'рахунок', 'матч', 'футбол', 'баскетбол'],
             weather: ['погода', 'дощ', 'сонячно', 'холодно', 'жарко', 'сніг', 'хмарно'],
@@ -288,10 +295,10 @@ class AtmosphereEnhancer {
             if (sentiment === 'positive' && (lowerMessage.includes('!') || lowerMessage.includes('круто'))) {
                 return "Енерджайзер";
             }
-            if (lowerMessage.includes('?') && lowerMessage.length > 20) {
+            if (lowerMessage.includes('?') && (lowerMessage.includes('думаєте') || lowerMessage.includes('питання') || lowerMessage.length > 15)) {
                 return "Стартер Тем";
             }
-            if (lowerMessage.includes('їжа') || lowerMessage.includes('їсти')) {
+            if (lowerMessage.includes('їжа') || lowerMessage.includes('їжу') || lowerMessage.includes('їсти')) {
                 return "Фуді Дослідник";
             }
         }

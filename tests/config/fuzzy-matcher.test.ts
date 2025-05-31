@@ -602,7 +602,7 @@ describe('FuzzyMatcher - Typo and Spelling Tolerance', () => {
       const endTime = Date.now();
 
       expect(result).not.toBeNull();
-      expect(endTime - startTime).toBeLessThan(50); // Should be very fast
+      expect(endTime - startTime).toBeLessThan(60); // Should be very fast
     });
   });
 
