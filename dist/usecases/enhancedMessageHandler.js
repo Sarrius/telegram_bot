@@ -9,6 +9,7 @@ const memeGenerator_1 = require("../domain/memeGenerator");
 const botCapabilities_1 = require("../domain/botCapabilities");
 const potuzhnoPowerWordsDetector_1 = require("../domain/potuzhnoPowerWordsDetector");
 const moderationHandler_1 = require("./moderationHandler");
+const userMemory_1 = require("../domain/userMemory");
 const messageAnalyzer_1 = require("../domain/messageAnalyzer");
 class EnhancedMessageHandler {
     constructor(contentConfig, atmosphereConfig, moderationConfig) {
@@ -28,7 +29,8 @@ class EnhancedMessageHandler {
         this.botCapabilities = new botCapabilities_1.BotCapabilities();
         this.powerWordsDetector = new potuzhnoPowerWordsDetector_1.PotuzhnoPowerWordsDetector();
         this.moderationHandler = new moderationHandler_1.ModerationHandler(moderationConfig);
-        console.log('🇺🇦 Enhanced Ukrainian Telegram Bot Handler initialized');
+        this.userMemory = new userMemory_1.UserMemory();
+        console.log('🇺🇦 Enhanced Ukrainian Telegram Bot Handler initialized with memory system');
         // Start periodic atmosphere engagement checks
         this.startAtmosphereMonitoring();
     }
@@ -36,7 +38,46 @@ class EnhancedMessageHandler {
         const startTime = Date.now();
         console.log(`🚀 Enhanced processing: "${context.text?.substring(0, 50)}..." from ${context.userName}`);
         try {
-            // Step 1: Check for profanity/inappropriate language (highest priority)
+            // Step 0: Check user memory and handle apology demands (highest priority)
+            const isRequest = this.isRequestMessage(context.text);
+            const memoryAnalysis = this.userMemory.analyzeMessage(context.userId, context.userName, context.firstName, context.text, isRequest);
+            // If user needs to apologize and is making a request, block with memory message
+            if (memoryAnalysis.shouldDemandApology && memoryAnalysis.shouldBlock) {
+                console.log(`🧠 Memory system blocking user ${context.userName}: needs apology`);
+                return {
+                    ...this.createBaseResponse(),
+                    shouldReply: true,
+                    reply: memoryAnalysis.memoryMessage,
+                    confidence: 1.0,
+                    reasoning: `User needs to apologize before making requests`,
+                    memoryResponse: {
+                        shouldDemandApology: memoryAnalysis.shouldDemandApology,
+                        shouldBlock: memoryAnalysis.shouldBlock,
+                        emotionalState: memoryAnalysis.emotionalState,
+                        message: memoryAnalysis.memoryMessage
+                    },
+                    responseType: 'memory'
+                };
+            }
+            // If it's a good apology, respond positively
+            if (memoryAnalysis.shouldRewardGoodBehavior && memoryAnalysis.memoryMessage) {
+                console.log(`🧠 Memory system rewarding user ${context.userName}: good behavior`);
+                return {
+                    ...this.createBaseResponse(),
+                    shouldReply: true,
+                    reply: memoryAnalysis.memoryMessage,
+                    confidence: 1.0,
+                    reasoning: `Rewarding user for good behavior or apology`,
+                    memoryResponse: {
+                        shouldDemandApology: memoryAnalysis.shouldDemandApology,
+                        shouldBlock: memoryAnalysis.shouldBlock,
+                        emotionalState: memoryAnalysis.emotionalState,
+                        message: memoryAnalysis.memoryMessage
+                    },
+                    responseType: 'memory'
+                };
+            }
+            // Step 1: Check for profanity/inappropriate language (high priority)
             const moderationAnalysis = this.moderationHandler.analyzeMessage(context.text, context.chatType || 'group', context.userId, context.chatId);
             if (moderationAnalysis.shouldRespond) {
                 console.log(`🔴 Profanity detected: ${moderationAnalysis.responseType} response (${(moderationAnalysis.confidence * 100).toFixed(1)}%)`);
@@ -403,6 +444,19 @@ class EnhancedMessageHandler {
     testProfanityMessage(message) {
         return this.moderationHandler.testMessage(message);
     }
+    // Memory system methods
+    getUserMemoryProfile(userId) {
+        return this.userMemory.getUserProfile(userId);
+    }
+    resetUserApology(userId) {
+        this.userMemory.resetUserApology(userId);
+    }
+    getMemoryStats() {
+        return this.userMemory.getStats();
+    }
+    getAllUserMemories() {
+        return this.userMemory.getAllMemories();
+    }
     // Bot capabilities methods
     isBotCapabilitiesRequest(context) {
         return this.botCapabilities.detectCapabilityRequest(context.text);
@@ -447,6 +501,24 @@ class EnhancedMessageHandler {
         return englishWordCount > 0 ? 'en' : 'uk';
     }
     // NEW: Enhanced emotional engagement detection
+    isRequestMessage(text) {
+        const lowerText = text.toLowerCase();
+        // Команди
+        if (lowerText.startsWith('/'))
+            return true;
+        // Українські прохання
+        const ukrainianRequestWords = [
+            'зроби', 'покажи', 'скажи', 'напиши', 'згенеруй', 'створи', 'допоможи',
+            'можеш', 'будь ласка', 'прошу', 'дай', 'підкажи', 'розкажи', 'поясни'
+        ];
+        // Англійські прохання
+        const englishRequestWords = [
+            'do', 'show', 'tell', 'write', 'generate', 'create', 'help', 'can you',
+            'could you', 'please', 'give me', 'make', 'explain', 'how to'
+        ];
+        const allRequestWords = [...ukrainianRequestWords, ...englishRequestWords];
+        return allRequestWords.some(word => lowerText.includes(word));
+    }
     shouldEngageBasedOnEmotions(context) {
         const text = context.text.toLowerCase();
         // Always engage on direct emotional appeals

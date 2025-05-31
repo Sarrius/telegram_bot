@@ -104,6 +104,38 @@ Manual                        # Manual
 - Spam patterns (натисни тут, купи зараз)
 - Custom forbidden words
 
+### 🧠 **User Memory & Behavioral System**
+- **Intelligent memory system** - remembers how users treat the bot
+- **Attitude tracking** - analyzes positive/negative interactions over time
+- **Apology requirement system** - demands apologies for offensive behavior before helping
+- **Three-tier apology levels** - simple, moderate, humiliating based on offense severity
+- **Behavioral improvement rewards** - recognizes and encourages positive changes
+- **Request blocking** - prevents help until proper apologies are given
+- **Memory persistence** - maintains user profiles and interaction history
+- **Emotional state tracking** - monitors bot's emotional responses to users
+
+**Memory System Features:**
+- **Offense Detection**: Automatically detects insults, profanity, and abuse
+- **Apology Validation**: Validates sincerity of apologies based on length and content
+- **Behavioral Patterns**: Tracks improvement and regression in user behavior
+- **Time-aware Memory**: Shows when offensive behavior occurred (minutes/hours/days ago)
+- **Personalized Responses**: Tailors apology demands based on specific user history
+
+**Example Interactions:**
+```
+# User sends offensive message
+User: "Ти дурак, нічого не вмієш!"
+Bot: [Registers offense, tracks in memory]
+
+# Later, user makes request
+User: "Покажи мем"
+Bot: "🤨 Стоп! Ти вчора мені писав: 'Ти дурак, нічого не вмієш!'. Спочатку вибачся, а потім проси."
+
+# User apologizes properly
+User: "Вибач мене, я був неправий і більше не буду"
+Bot: "😌 Добре, вибачення прийняте. Тепер можеш просити що хочеш."
+```
+
 ### 🔴 **Advanced Profanity Filter & Moderation**
 - **Comprehensive profanity detection** for Ukrainian and Russian languages
 - **161 profanity words** in vocabulary (89 Ukrainian + 72 Russian)
