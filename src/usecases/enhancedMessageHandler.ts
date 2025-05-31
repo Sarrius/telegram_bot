@@ -12,6 +12,7 @@ import { FeatureManager } from '../config/featureManager';
 import { KnowledgeSearchHandler, KnowledgeSearchResponse } from './knowledgeSearchHandler';
 import { CLICommandHandler, CLICommandResponse } from './cliCommandHandler';
 import { CurrencyHandler, CurrencyResponse } from './currencyHandler';
+import { NewsWeatherHandler } from './newsWeatherHandler';
 
 export interface EnhancedMessageContext extends MessageContext {
   isDirectMention?: boolean;
@@ -84,6 +85,7 @@ export class EnhancedMessageHandler {
   private knowledgeSearchHandler: KnowledgeSearchHandler;
   private cliCommandHandler: CLICommandHandler;
   private currencyHandler: CurrencyHandler;
+  private newsWeatherHandler: NewsWeatherHandler | null = null;
   
   private engagementCheckInterval: NodeJS.Timeout | null = null;
   private chatEngagementCallbacks: Map<string, (action: any) => void> = new Map();
@@ -91,7 +93,8 @@ export class EnhancedMessageHandler {
   constructor(
     contentConfig?: Partial<ContentConfiguration>,
     atmosphereConfig?: Partial<AtmosphereConfig>,
-    moderationConfig?: Partial<ModerationConfig>
+    moderationConfig?: Partial<ModerationConfig>,
+    newsWeatherHandler?: NewsWeatherHandler
   ) {
     this.baseHandler = new MessageHandler();
     this.nlpEngine = new NLPConversationEngine();
@@ -112,6 +115,7 @@ export class EnhancedMessageHandler {
     this.knowledgeSearchHandler = new KnowledgeSearchHandler();
     this.cliCommandHandler = new CLICommandHandler();
     this.currencyHandler = new CurrencyHandler();
+    this.newsWeatherHandler = newsWeatherHandler || null;
 
     console.log('🇺🇦 Enhanced Ukrainian Telegram Bot Handler initialized with memory system');
     // Start periodic atmosphere engagement checks
@@ -240,7 +244,26 @@ export class EnhancedMessageHandler {
       // Generate response to update user statistics (we may not use the response)
       await this.nlpEngine.generateConversationalResponse(nlpContext);
 
-      // Step 3: Check for currency queries (exchange rates, conversions) - high priority for direct commands
+      // Step 3: Check for news/weather queries - high priority for direct commands
+      if (this.newsWeatherHandler) {
+        const newsWeatherResponse = await this.newsWeatherHandler.handleNewsCommand(
+          parseInt(context.chatId), 
+          context.text
+        );
+        if (newsWeatherResponse) {
+          console.log(`📰 News/weather command processed: ${newsWeatherResponse.substring(0, 50)}...`);
+          return {
+            ...this.createBaseResponse(),
+            shouldReply: true,
+            reply: newsWeatherResponse,
+            confidence: 0.95,
+            reasoning: 'News/weather command processed',
+            responseType: 'reply'
+          };
+        }
+      }
+
+      // Step 4: Check for currency queries (exchange rates, conversions) - high priority for direct commands
       // Clean text from bot mentions for currency processing
       const cleanTextForCurrency = context.text.replace(/@\w+\s*/gi, '').trim();
       const currencyResponse = await this.currencyHandler.handleMessage(cleanTextForCurrency || context.text);
@@ -262,15 +285,7 @@ export class EnhancedMessageHandler {
         };
       }
 
-      // Step 3.8: Check for bot capabilities requests (high priority)
-      if (this.isBotCapabilitiesRequest(context)) {
-        const capabilitiesResponse = await this.handleCapabilitiesRequest(context);
-        if (capabilitiesResponse) {
-          return capabilitiesResponse;
-        }
-      }
-
-      // Step 3.1: Check for CLI commands (help, status, feature management)
+      // Step 5: Check for CLI commands (help, status, feature management) - BEFORE conversation requests
       const cliResponse = this.cliCommandHandler.handleMessage(
         context.text,
         context.chatType || 'group',
@@ -295,7 +310,41 @@ export class EnhancedMessageHandler {
         };
       }
 
-      // Step 3.5: Check for knowledge search queries (questions, math, facts)
+      // Step 6: Check for power words ("потужно" синоніми) with typo tolerance - HIGH PRIORITY for reactions
+      if (this.featureManager.isEnabled('powerWords')) {
+        const powerWordMatch = this.powerWordsDetector.getBestPowerWordMatch(context.text);
+        if (powerWordMatch) {
+          console.log(`⚡ Power word detected: "${powerWordMatch.originalWord}" -> "${powerWordMatch.matchedWord}" (${(powerWordMatch.confidence * 100).toFixed(1)}%)`);
+          
+          const emoji = this.powerWordsDetector.getReactionEmoji(powerWordMatch);
+          const motivationalResponse = this.powerWordsDetector.getMotivationalResponse(powerWordMatch);
+          
+          return {
+            ...this.createBaseResponse(),
+            shouldReact: true,
+            reaction: emoji,
+            shouldReply: false, // Тільки реакція, без текстової відповіді
+            confidence: powerWordMatch.confidence,
+            reasoning: `Power word detected: ${powerWordMatch.originalWord} -> ${powerWordMatch.matchedWord} (reaction only)`,
+            powerWordReaction: {
+              emoji,
+              match: powerWordMatch,
+              motivationalResponse
+            },
+            responseType: 'power_word'
+          };
+        }
+      }
+
+      // Step 7: Check for bot capabilities requests (lower priority than reactions)
+      if (this.isBotCapabilitiesRequest(context)) {
+        const capabilitiesResponse = await this.handleCapabilitiesRequest(context);
+        if (capabilitiesResponse) {
+          return capabilitiesResponse;
+        }
+      }
+
+      // Step 8: Check for knowledge search queries (questions, math, facts)
       if (this.featureManager.isEnabled('knowledgeSearch')) {
         const knowledgeResponse = await this.knowledgeSearchHandler.handleMessage(
           context.text,
@@ -322,33 +371,7 @@ export class EnhancedMessageHandler {
         }
       }
 
-      // Step 4: Check for power words ("потужно" синоніми) with typo tolerance
-      if (this.featureManager.isEnabled('powerWords')) {
-      const powerWordMatch = this.powerWordsDetector.getBestPowerWordMatch(context.text);
-      if (powerWordMatch) {
-        console.log(`⚡ Power word detected: "${powerWordMatch.originalWord}" -> "${powerWordMatch.matchedWord}" (${(powerWordMatch.confidence * 100).toFixed(1)}%)`);
-        
-        const emoji = this.powerWordsDetector.getReactionEmoji(powerWordMatch);
-        const motivationalResponse = this.powerWordsDetector.getMotivationalResponse(powerWordMatch);
-        
-        return {
-          ...this.createBaseResponse(),
-          shouldReact: true,
-          reaction: emoji,
-            shouldReply: false, // Тільки реакція, без текстової відповіді
-          confidence: powerWordMatch.confidence,
-            reasoning: `Power word detected: ${powerWordMatch.originalWord} -> ${powerWordMatch.matchedWord} (reaction only)`,
-          powerWordReaction: {
-            emoji,
-            match: powerWordMatch,
-            motivationalResponse
-          },
-          responseType: 'power_word'
-        };
-        }
-      }
-
-      // Step 5: Check for direct conversation requests (mentions, replies, help requests)
+      // Step 9: Check for direct conversation requests (mentions, replies, help requests)
       if (this.isDirectConversationRequest(context)) {
         const conversationResponse = await this.handleConversation(context);
         if (conversationResponse) {
@@ -356,7 +379,7 @@ export class EnhancedMessageHandler {
         }
       }
 
-      // Step 6: Check for meme requests
+      // Step 10: Check for meme requests
       if (this.isMemeRequest(context)) {
         const memeResponse = await this.handleMemeRequest(context);
         if (memeResponse) {
@@ -364,7 +387,7 @@ export class EnhancedMessageHandler {
         }
       }
 
-      // Step 7: Enhanced emotional trigger detection
+      // Step 11: Enhanced emotional trigger detection
       const shouldEngageEmotionally = this.shouldEngageBasedOnEmotions(context);
       if (!shouldEngageEmotionally.shouldEngage) {
         console.log(`🤐 Staying quiet: ${shouldEngageEmotionally.reasoning}`);
@@ -376,10 +399,10 @@ export class EnhancedMessageHandler {
         };
       }
 
-      // Step 8: Use base handler for sentiment reactions only if we decided to engage
+      // Step 12: Use base handler for sentiment reactions only if we decided to engage
       const baseResponse = await this.baseHandler.handleMessage(context);
 
-      // Step 9: Enhance with meme suggestions if appropriate
+      // Step 13: Enhance with meme suggestions if appropriate
       if (baseResponse.shouldReact && Math.random() < 0.1) { // 10% chance to suggest meme
         const memeData = await this.tryGenerateContextualMeme(context.text);
         if (memeData) {
@@ -391,7 +414,7 @@ export class EnhancedMessageHandler {
         }
       }
 
-      // Step 10: Return enhanced base response
+      // Step 14: Return enhanced base response
       const processingTime = Date.now() - startTime;
       console.log(`✅ Enhanced processing completed in ${processingTime}ms`);
       

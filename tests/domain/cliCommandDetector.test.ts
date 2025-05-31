@@ -18,11 +18,8 @@ describe('CLICommandDetector', () => {
       const englishCommands = [
         'help',
         '/help',
-        'commands',
-        'show commands',
-        'list commands',
-        'what commands',
-        'available commands'
+        'cli help',
+        '/cli help'
       ];
 
       englishCommands.forEach(command => {
@@ -37,7 +34,9 @@ describe('CLICommandDetector', () => {
     it('should detect bot mention help commands', () => {
       const botMentionCommands = [
         '@bot cli help',
-        '@bot help'
+        '@mr_potuzhnich_bot cli help',
+        '@bot /cli help',
+        '@mr_potuzhnich_bot /cli help'
       ];
 
       botMentionCommands.forEach(command => {
@@ -74,8 +73,10 @@ describe('CLICommandDetector', () => {
       const statusCommands = [
         'status',
         '/status',
-        '@bot status',
-        '@bot cli status'
+        'cli status',
+        '/cli status',
+        '@bot cli status',
+        '@mr_potuzhnich_bot cli status'
       ];
 
       statusCommands.forEach(command => {
@@ -106,7 +107,11 @@ describe('CLICommandDetector', () => {
     it('should detect English features commands only', () => {
       const featuresCommands = [
         'features',
-        '@bot features'
+        '/features',
+        'cli features',
+        '/cli features',
+        '@bot cli features',
+        '@mr_potuzhnich_bot cli features'
       ];
 
       featuresCommands.forEach(command => {
@@ -133,14 +138,37 @@ describe('CLICommandDetector', () => {
     });
   });
 
+  describe('CLI mode command detection', () => {
+    it('should detect CLI mode commands', () => {
+      const cliCommands = [
+        'cli',
+        '/cli',
+        'cli mode',
+        '@bot cli',
+        '@mr_potuzhnich_bot cli',
+        '@bot /cli',
+        '@mr_potuzhnich_bot /cli'
+      ];
+
+      cliCommands.forEach(command => {
+        const result = detector.detectCommand(command);
+        expect(result.isCommand).toBe(true);
+        expect(result.command).toBe('cli');
+        expect(result.language).toBe('en');
+        expect(result.confidence).toBeGreaterThan(0.8);
+      });
+    });
+  });
+
   describe('Feature control commands', () => {
     it('should detect English feature control commands', () => {
       const englishCommands = [
         { command: 'enable powerWords', expectedCommand: 'enable' },
         { command: 'disable moderation', expectedCommand: 'disable' },
         { command: 'toggle memes', expectedCommand: 'toggle' },
-        { command: 'turn on news', expectedCommand: 'enable' },
-        { command: 'turn off weather', expectedCommand: 'disable' }
+        { command: '/enable news', expectedCommand: 'enable' },
+        { command: 'cli enable weather', expectedCommand: 'enable' },
+        { command: 'cli disable powerWords', expectedCommand: 'disable' }
       ];
 
       englishCommands.forEach(({ command, expectedCommand }) => {
@@ -154,9 +182,11 @@ describe('CLICommandDetector', () => {
 
     it('should detect bot mention feature control', () => {
       const botCommands = [
-        '@bot enable powerWords',
-        '@bot disable moderation',
-        '@bot toggle memes'
+        '@bot cli enable powerWords',
+        '@bot cli disable moderation',
+        '@bot cli toggle memes',
+        '@mr_potuzhnich_bot cli enable news',
+        '@mr_potuzhnich_bot cli disable weather'
       ];
 
       botCommands.forEach(command => {
@@ -191,10 +221,10 @@ describe('CLICommandDetector', () => {
     it('should only detect English CLI commands', () => {
       const englishTexts = [
         'help',
-        'commands',
-        'enable features',
+        'cli help',
+        'enable powerWords',
         'status',
-        'toggle powerWords'
+        'toggle moderation'
       ];
 
       englishTexts.forEach(text => {
@@ -275,9 +305,9 @@ describe('CLICommandDetector', () => {
         'HELP',
         'Help',
         'hElP',
-        'COMMANDS',
-        'Commands',
-        'cOmMaNdS'
+        'CLI HELP',
+        'Cli Help',
+        'cLi HeLp'
       ];
 
       caseVariations.forEach(command => {

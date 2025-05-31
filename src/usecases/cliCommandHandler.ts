@@ -50,6 +50,8 @@ export class CLICommandHandler {
           return this.handleStatusCommand(match);
         case 'features':
           return this.handleFeaturesCommand(match);
+        case 'cli':
+          return this.handleCliModeCommand(match);
         case 'enable':
         case 'disable':
         case 'toggle':
@@ -112,6 +114,20 @@ export class CLICommandHandler {
       response,
       confidence: match.confidence,
       reasoning: `CLI features command in ${match.language}`,
+      command: match.command,
+      args: match.args
+    };
+  }
+
+  private handleCliModeCommand(match: CLICommandMatch): CLICommandResponse {
+    const response = this.generateCliModeResponse(match.language);
+    
+    return {
+      shouldRespond: true,
+      responseType: 'cli_help',
+      response,
+      confidence: match.confidence,
+      reasoning: `CLI mode entry command in ${match.language}`,
       command: match.command,
       args: match.args
     };
@@ -283,6 +299,54 @@ export class CLICommandHandler {
     const mappedFeatures = featureMapper.getFormattedFeaturesList();
     
     return basicHelp + '\n\n' + mappedFeatures;
+  }
+
+  private generateCliModeResponse(language: 'uk' | 'en'): string {
+    if (language === 'uk') {
+      return `🖥️ **CLI режим активовано!**
+
+📖 **Доступні CLI команди:**
+
+**Основні команди:**
+• \`help\` - показати довідку
+• \`status\` - статус всіх функцій
+• \`features\` - список функцій для управління
+
+**Управління функціями:**
+• \`enable [функція]\` - увімкнути функцію
+• \`disable [функція]\` - вимкнути функцію
+• \`toggle [функція]\` - перемкнути функцію
+
+**Приклади:**
+• \`enable powerWords\`
+• \`disable moderation\`
+• \`status\`
+
+💡 **Підказка:** Для звичайного спілкування просто пишіть без команд CLI.
+Наприклад: "що ти можеш?" - дасть дружню відповідь.`;
+    } else {
+      return `🖥️ **CLI Mode Activated!**
+
+📖 **Available CLI Commands:**
+
+**Basic Commands:**
+• \`help\` - show help
+• \`status\` - show all features status
+• \`features\` - list manageable features
+
+**Feature Management:**
+• \`enable [feature]\` - enable feature
+• \`disable [feature]\` - disable feature
+• \`toggle [feature]\` - toggle feature
+
+**Examples:**
+• \`enable powerWords\`
+• \`disable moderation\`
+• \`status\`
+
+💡 **Tip:** For natural conversation, just type without CLI commands.
+Example: "what can you do?" - will give a friendly response.`;
+    }
   }
 
   public getStats() {
